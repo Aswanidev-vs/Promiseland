@@ -1,0 +1,49 @@
+# PromisedLand — single-EC2 override.
+#
+# Usage (on the instance, with a production .env present):
+#   docker compose -f docker-compose.yml -f deploy/compose/prod.yml up -d --build
+#
+# Only the edge proxy publishes port 80. The API is reachable on 127.0.0.1
+# for local diagnostics and by the proxy over the compose network; nothing
+# binds it to the public interface. SQLite lives on the EBS-backed host path
+# mounted at /srv/promisedland/data (see deploy/aws/README.md).
+
+name: promisedland
+
+services:
+  api:
+    environment:
+      APP_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN to the public HTTPS origin in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env before production}
+    ports: !override ["127.0.0.1:8080:8080"]
+    volumes:
+      - /srv/promisedland/data:/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  web:
+    # Static assets are served by the proxy, so no direct host port.
+    ports: !reset []
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  proxy:
+    # Activated even when --profile proxy is omitted in a prod invocation.
+    profiles: !reset []
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M

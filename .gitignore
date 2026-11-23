@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Generated build output (never committed; images rebuild it)
+dist/
+
+# Bun: the text lockfile is committed; the legacy binary one is not
+bun.lockb
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# SQLite database files and runtime data
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Go build and test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.txt
+coverage.html
+coverage/
+frontend/coverage/
+backend/coverage/
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store

@@ -1,0 +1,83 @@
+# PromisedLand — local development stack.
+#
+# Default (`docker compose up --build`) starts only `api` + `web`.
+# The optional reverse proxy for a single-host deployment is behind the
+# `proxy` profile: `docker compose --profile proxy up --build`.
+#
+# All configuration comes from the environment / .env (see .env.example).
+# No secret values are stored in this file.
+
+name: promisedland
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: promisedland-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: ${PORT:-8080}
+      DATABASE_PATH: /data/promisedland.db
+      APP_ENV: ${APP_ENV:-development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      FEATURE_ADULT_DATING: ${FEATURE_ADULT_DATING:-false}
+    volumes:
+      - promisedland-data:/data
+    networks:
+      - promisedland
+    healthcheck:
+      # The backend runtime image is Alpine-based (wget is available).
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: promisedland-web
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    environment:
+      # Consumed by the frontend container's nginx to reach the Go API
+      # over the compose network. The frontend owns that runtime template.
+      API_UPSTREAM: http://api:8080
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - promisedland
+
+  # Optional single-host edge: serves the built SPA and proxies /api/ and /ws/.
+  # Build context is the repo root because the Dockerfile assembles the
+  # frontend bundle and the nginx config from deploy/nginx/.
+  proxy:
+    profiles: [proxy]
+    build:
+      context: .
+      dockerfile: deploy/nginx/Dockerfile
+    container_name: promisedland-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+    networks:
+      - promisedland
+
+volumes:
+  promisedland-data:
+
+networks:
+  promisedland:
+    driver: bridge

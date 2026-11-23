@@ -1,0 +1,24 @@
+# Keep build contexts small and never send secrets to the daemon.
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output are installed/built inside images.
+**/node_modules
+**/dist
+**/.vite
+**/coverage
+
+# Runtime data and logs.
+*.db
+*.db-shm
+*.db-wal
+data/
+*.log
+
+# Local editor / OS noise.
+.idea/
+.vscode/
+.DS_Store
