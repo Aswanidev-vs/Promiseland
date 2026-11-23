@@ -428,3 +428,118 @@ export interface ListCreatorsParams extends PaginationParams {
 
 /** Query parameter values accepted by buildQuery. */
 export type QueryValue = string | number | boolean | null | undefined
+
+// ── Release 3 wire DTOs (snake_case — docs/conventions.md §R3) ──
+
+export type ChatRole = 'owner' | 'moderator' | 'member' | null
+export type ChatChannelType = 'text'
+export type ConversationType = 'direct' | 'group'
+/** Chat reactions are short codes rendered with the icon set, never emoji. */
+export type ChatReactionCode = 'like' | 'heart' | 'star' | 'laugh'
+
+export interface ChatReaction {
+  reaction: string
+  count: number
+  me: boolean
+}
+
+export interface ChatMessage {
+  id: number
+  channel_id: number | null
+  conversation_id: number | null
+  author: UserSummary
+  parent_id: number | null
+  body: string
+  reactions: ChatReaction[]
+  created_at: string
+  edited_at: string | null
+  deleted: boolean
+}
+
+export interface ChatChannel {
+  id: number
+  server_id: number
+  name: string
+  description: string | null
+  type: ChatChannelType
+  last_message: ChatMessage | null
+  unread_count: number
+}
+
+export interface ChatServer {
+  id: number
+  owner: UserSummary
+  name: string
+  slug: string
+  description: string | null
+  icon_url: string | null
+  member_count: number
+  channels: ChatChannel[]
+  role: ChatRole
+  created_at: string
+}
+
+export interface Conversation {
+  id: number
+  type: ConversationType
+  name: string
+  members: UserSummary[]
+  last_message: ChatMessage | null
+  unread_count: number
+  created_at: string
+}
+
+export type ChatEventType =
+  | 'message.new'
+  | 'message.deleted'
+  | 'reaction.updated'
+  | 'typing'
+  | 'presence'
+
+/**
+ * Server-pushed realtime frame from `WS /ws` (internal/realtime.Event).
+ * `payload` is deliberately loose because the Go hub types it as `any`.
+ */
+export interface ChatEvent {
+  type: string
+  payload: Record<string, unknown>
+  channel_id?: number | null
+  conversation_id?: number | null
+  /** Used by presence/typing; empty means the frame is scoped by channel/conversation. */
+  user_ids?: number[]
+}
+
+/** User id → presence status string, as returned by GET /chat/presence. */
+export type PresenceMap = Record<number, string>
+
+// ── Release 3 request inputs (camelCase client → snake_case wire in api/) ──
+
+/** A chat target: exactly one of the two ids is normally supplied. */
+export interface ChatScope {
+  channelId?: number
+  conversationId?: number
+}
+
+export type ChatMessageScope = ChatScope
+
+export interface ListMessagesParams extends ChatScope, PaginationParams {}
+
+export interface CreateServerInput {
+  name: string
+  description: string
+}
+
+export interface CreateChannelInput {
+  name: string
+  description: string
+}
+
+export interface CreateConversationInput {
+  memberIds: number[]
+  name?: string
+}
+
+export interface ReportMessageInput {
+  reason: string
+  details?: string
+}

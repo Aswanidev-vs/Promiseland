@@ -9,6 +9,8 @@ interface Tab {
   label: string
   icon: IconName
   to?: string
+  /** Icon-only tab, used to fit Chat into the five-tab bar without overflow. */
+  compact?: boolean
 }
 
 const auth = useAuthStore()
@@ -20,6 +22,7 @@ const profileTo = computed(() =>
 const tabs = computed<Tab[]>(() => [
   { label: 'Home', icon: 'home', to: '/home' },
   { label: 'Communities', icon: 'communities', to: '/communities' },
+  { label: 'Chat', icon: 'chat', to: '/chat', compact: true },
   { label: 'Events', icon: 'events', to: '/events' },
   { label: 'Notifications', icon: 'bell', to: '/notifications' },
   { label: 'Profile', icon: 'profile', to: profileTo.value },
@@ -34,7 +37,10 @@ const tabs = computed<Tab[]>(() => [
           v-if="tab.to"
           :to="tab.to"
           class="mobile-nav__tab"
+          :class="{ 'mobile-nav__tab--compact': tab.compact }"
           active-class="mobile-nav__tab--active"
+          :aria-label="tab.compact ? tab.label : undefined"
+          :title="tab.compact ? tab.label : undefined"
         >
           <AppIcon :name="tab.icon" :size="22" />
           <span>{{ tab.label }}</span>
@@ -68,7 +74,7 @@ const tabs = computed<Tab[]>(() => [
 
 .mobile-nav__list {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   height: 100%;
 }
 
@@ -89,6 +95,18 @@ const tabs = computed<Tab[]>(() => [
   line-height: 1.1;
   text-align: center;
   text-decoration: none;
+  overflow: hidden;
+}
+
+.mobile-nav__tab span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-nav__tab--compact span {
+  display: none;
 }
 
 a.mobile-nav__tab:hover {

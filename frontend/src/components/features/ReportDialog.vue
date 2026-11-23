@@ -5,10 +5,15 @@ import { report } from '@/api/moderation'
 import { useUiStore } from '@/stores/ui'
 import { errorMessage, REPORT_REASONS } from './format'
 
-const props = defineProps<{
-  targetType: string
-  targetId: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    targetType: string
+    targetId: number
+    /** Chat messages have their own endpoint; other targets use generic /reports. */
+    submitter?: (input: { reason: string; details?: string }) => Promise<void>
+  }>(),
+  { submitter: undefined },
+)
 
 const emit = defineEmits<{ close: []; submitted: [] }>()
 
@@ -36,13 +41,15 @@ async function submit(): Promise<void> {
   }
   submitting.value = true
   error.value = ''
+  const input = { reason: reason.value, details: details.value.trim() || undefined }
   try {
-    await report({
-      targetType: props.targetType,
-      targetId: props.targetId,
-      reason: reason.value,
-      details: details.value.trim() || undefined,
-    })
+    if (props.submitter) await props.submitter(input)
+    else
+      await report({
+        targetType: props.targetType,
+        targetId: props.targetId,
+        ...input,
+      })
     ui.pushToast({ title: 'Report sent', message: 'The moderation team will review it.', tone: 'success' })
     emit('submitted')
     emit('close')

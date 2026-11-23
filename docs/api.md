@@ -31,12 +31,12 @@ Typical statuses: `400` validation, `401` unauthenticated, `403` forbidden / own
 |---|---|
 | **R0 — foundation** | Expected in the technical-foundation release (health only) |
 | **Implemented (R1)** | Social foundation / first beta |
-| **In progress (R2)** | Creator and events |
-| **Planned (R3)** | Community communication (chat) |
+| **Implemented (R2)** | Creator and events |
+| **Implemented (R3)** | Community communication (chat) |
 | **Planned (R4)** | Interest-based discovery |
 | **Planned (R5)** | Optional, adults-only, feature-gated |
 
-R1 endpoints are implemented; R2 is in progress; R3–R5 remain planned. See `docs/conventions.md` for the authoritative request/response contracts.
+R1–R3 endpoints are implemented; R4–R5 remain planned. See `docs/conventions.md` for the authoritative request/response contracts.
 
 ## Health (R0 — foundation)
 
@@ -176,7 +176,7 @@ Illustrative shapes:
 - Report: `{ "id", "reporter_id", "target_type", "target_id", "reason", "details", "status" }`. Reasons: spam, harassment, impersonation, hate/abuse, inappropriate content, copyright, spoiler abuse, unsafe event, other (PRD §7.15).
 - Moderation action: `{ "id", "moderator_id", "target_type", "target_id", "action", "reason", "created_at" }`. Every action is logged with actor, target, reason, timestamp and scope.
 
-## Events (In progress R2)
+## Events (Implemented R2)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -190,7 +190,7 @@ Illustrative shapes:
 
 Illustrative shape: `{ "id", "organizer_id", "title", "description", "event_type", "starts_at", "ends_at", "timezone", "venue_text", "capacity"?, "attendee_count" }`. Times are stored with an explicit timezone strategy; exact addresses and live location are never exposed by default (PRD §7.9). Capacity is enforced transactionally.
 
-## Team-ups (In progress R2)
+## Team-ups (Implemented R2)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -200,7 +200,7 @@ Illustrative shape: `{ "id", "organizer_id", "title", "description", "event_type
 
 Illustrative shape: `{ "id", "creator_id", "type", "description", "event_or_anime_ref", "broad_location", "needed" }`. Only the creator accepts/declines; private contact details are not exposed before consent (PRD §7.10).
 
-## Chat (Planned R3)
+## Chat (Implemented R3)
 
 | Method | Path | Purpose |
 |---|---|---|

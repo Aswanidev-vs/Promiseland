@@ -159,6 +159,49 @@ Event types: `convention|meetup|screening|photoshoot|club|online|competition|oth
 
 `/events` EventsView · `/events/new` CreateEventView · `/events/:id` EventView · `/creators` CreatorsView · `/team-ups` TeamUpsView · `/team-ups/new` CreateTeamUpView · `/team-ups/:id` TeamUpView. All require auth except browsing `/events` and `/creators` (public).
 
+## Release 3 cross-agent contract (R3)
+
+### Migrations
+R3 backend owns `015`–`018`: chat servers/channels/members, conversations, messages/reactions, presence/typing state.
+
+### Backend JSON shapes
+- `ChatServer`: `{id, owner:UserSummary, name, slug, description, icon_url, member_count:int, channels:ChatChannel[], role:'owner'|'moderator'|'member'|null, created_at}`
+- `ChatChannel`: `{id, server_id:int64, name, description, type:'text', last_message:ChatMessage|null, unread_count:int}`
+- `Conversation`: `{id, type:'direct'|'group', name, members:UserSummary[], last_message:ChatMessage|null, unread_count:int, created_at}`
+- `ChatMessage`: `{id, channel_id:int64|null, conversation_id:int64|null, author:UserSummary, parent_id:int64|null, body, reactions:[{reaction:string,count:int,me:boolean}], created_at, edited_at:string, deleted:boolean}`
+
+Chat reactions are short codes (`like`, `heart`, `star`, `laugh`) rendered with the existing icon set — never emoji characters.
+
+### REST endpoints (R3)
+`GET/POST /chat/servers` · `GET/POST /chat/servers/{id}/channels` · `POST /chat/servers/{id}/join` · `GET /chat/conversations` · `POST /chat/conversations` `{memberIds:number[],name?}` · `GET/POST /chat/channels/{id}/messages` · `GET/POST /chat/conversations/{id}/messages` · `POST /chat/messages/{id}/reactions` `{reaction}` · `DELETE /chat/messages/{id}` · `POST /chat/messages/{id}/report` `{reason,details?}` · `POST /chat/typing` `{channelId?,conversationId?,isTyping}` · `GET /chat/presence?ids=1,2`.
+
+### Realtime contract (agent boundary)
+`internal/realtime` owns `WS /ws` (root, proxied by nginx) and exposes:
+```go
+type Hub struct { /* ... */ }
+func NewHub(logger *slog.Logger) *Hub
+func Default() *Hub                             // process-wide singleton used by chat handlers and the root router
+func (h *Hub) Handler() http.Handler            // websocket upgrade; auth via pl_session cookie via shared.Deps.SessionUserID
+func (h *Hub) Publish(ev Event)                  // fan-out to subscribers of a channel/conversation or to a specific user
+func (h *Hub) Subscribe(conn *Conn, userID int64, channelID, conversationID int64)
+func (h *Hub) SetDeps(d *shared.Deps)            // for auth lookup during upgrade
+type Event struct {
+    Type string `json:"type"` // message.new | message.deleted | reaction.updated | typing | presence
+    Payload any `json:"payload"`
+    ChannelID int64 `json:"channel_id,omitempty"`
+    ConversationID int64 `json:"conversation_id,omitempty"`
+    UserIDs []int64 `json:"user_ids,omitempty"` // used for presence/typing; empty = scope by channel/conversation
+}
+```
+Chat handlers call `h.Publish(...)` for `message.new`, `message.deleted`, `reaction.updated`, `typing`; the hub also publishes `presence` on connect/disconnect. Client frames: `{"type":"subscribe","channel_id":1}` / `{"type":"subscribe","conversation_id":2}`; server pushes the events above. Authorize every subscription against membership (hub calls an injected `CanAccess(userID, channelID, conversationID) bool` set by the chat package via `h.SetAccessChecker`).
+
+### R3 frontend API exports (F1 writes, F2 imports)
+`chat.ts`: `listServers(): Promise<ChatServer[]>`, `createServer(i:{name,description}): Promise<ChatServer>`, `joinServer(id): Promise<ChatServer>`, `listChannels(serverId): Promise<ChatChannel[]>`, `createChannel(serverId,i:{name,description}): Promise<ChatChannel>`, `listConversations(): Promise<Conversation[]>`, `createConversation(i:{memberIds:number[],name?}): Promise<Conversation>`, `listMessages(scope:{channelId?:number,conversationId?:number,limit?,cursor?}): Promise<Page<ChatMessage>>`, `sendMessage(scope:{channelId?:number,conversationId?:number}, body:string, parentId?:number): Promise<ChatMessage>`, `reactToMessage(id:number,reaction:string): Promise<ChatMessage>`, `deleteMessage(id:number): Promise<void>`, `reportMessage(id:number,reason:string): Promise<void>`, `sendTyping(scope:{channelId?:number,conversationId?:number}, isTyping:boolean): Promise<void>`, `getPresence(ids:number[]): Promise<Record<number,string>>`.
+Plus `src/composables/useChatSocket.ts` exposing `connect()`, `disconnect()`, reactive `messages`, `typing`, `presence`, `subscribe(scope)`.
+
+### R3 routes (F1 adds; F2 creates views)
+`/chat` ChatHomeView (auth) · `/chat/servers/:id` ChatServerView (auth) · `/chat/conversations/:id` ChatConversationView (auth). All require auth.
+
 ## Git
 
 One commit per release phase. Do not commit until the orchestrator (main agent) verifies and stages.

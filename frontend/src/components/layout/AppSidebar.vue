@@ -23,14 +23,14 @@ const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
 
-// Events is live in R2. Chat and Discover stay marked "Soon" until R3/R4.
+// Events and Chat are live. Discover stays marked "Soon" until R4.
 const sections = computed<NavSection[]>(() => [
   {
     items: [
       { label: 'Home', icon: 'home', to: '/home' },
       { label: 'Communities', icon: 'communities', to: '/communities' },
       { label: 'Events', icon: 'events', to: '/events' },
-      { label: 'Chat', icon: 'chat' },
+      { label: 'Chat', icon: 'chat', to: '/chat' },
       { label: 'Discover', icon: 'discover' },
       { label: 'Notifications', icon: 'bell', to: '/notifications' },
       { label: 'Profile', icon: 'profile', to: profileTo.value },

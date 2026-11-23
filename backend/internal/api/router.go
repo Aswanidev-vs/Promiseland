@@ -10,6 +10,7 @@ import (
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/anime"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/auth"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/chat"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/communities"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/creators"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/events"
@@ -18,6 +19,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/moderation"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/notifications"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/posts"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/realtime"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/search"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/teamups"
@@ -55,6 +57,11 @@ func New(d *shared.Deps) http.Handler {
 	// SQLite (PRD §10.6). Mounted before /api so it cannot be shadowed.
 	media.RegisterMedia(r, d)
 
+	// Authenticated WebSocket endpoint. Chat handlers publish events through
+	// the same singleton; chat.Register installs its access checker.
+	realtime.Default().SetDeps(d)
+	r.Handle("/ws", realtime.Default().Handler())
+
 	r.Route("/api/v1", func(r chi.Router) {
 		// Public routes. Handlers that need to know the viewer call
 		// d.SessionUserID(r) directly for privacy filtering.
@@ -68,6 +75,7 @@ func New(d *shared.Deps) http.Handler {
 		events.Register(r, d)
 		creators.Register(r, d)
 		teamups.Register(r, d)
+		chat.Register(r, d)
 
 		// Authenticated routes. With() shares chi's route tree, so these
 		// cannot shadow public routes; auth is also enforced in handlers.
@@ -82,8 +90,8 @@ func New(d *shared.Deps) http.Handler {
 		events.RegisterProtected(protected, d)
 		creators.RegisterProtected(protected, d)
 		teamups.RegisterProtected(protected, d)
+		chat.RegisterProtected(protected, d)
 
-		// [R3] chat.Register(r, d)
 		// [R4] discovery.Register(r, d)
 		// [R5] adult.Register(r, d) // gated by FEATURE_ADULT_DATING
 

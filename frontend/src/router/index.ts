@@ -152,6 +152,26 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Team up', requiresAuth: true },
   },
 
+  // Release 3 — chat (signed-in only).
+  {
+    path: '/chat',
+    name: 'chat',
+    component: () => import('@/views/ChatHomeView.vue'),
+    meta: { title: 'Chat', requiresAuth: true },
+  },
+  {
+    path: '/chat/servers/:id',
+    name: 'chat-server',
+    component: () => import('@/views/ChatServerView.vue'),
+    meta: { title: 'Server chat', requiresAuth: true },
+  },
+  {
+    path: '/chat/conversations/:id',
+    name: 'chat-conversation',
+    component: () => import('@/views/ChatConversationView.vue'),
+    meta: { title: 'Conversation', requiresAuth: true },
+  },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
