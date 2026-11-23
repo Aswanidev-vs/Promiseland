@@ -1,5 +1,6 @@
-// Package api assembles the HTTP router. Domain modules are mounted here in
-// later releases; each exposes Register(r chi.Router, d *shared.Deps).
+// Package api assembles the HTTP router. Domain modules are mounted here;
+// each exposes Register(r chi.Router, d *shared.Deps) and, where it has
+// authenticated operations, RegisterProtected as well.
 package api
 
 import (
@@ -7,7 +8,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Aswanidev-vs/promiseland/backend/internal/anime"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/auth"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/communities"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/feed"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/media"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/moderation"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/notifications"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/posts"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/search"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/users"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -37,31 +48,37 @@ func New(d *shared.Deps) http.Handler {
 		shared.WriteJSON(w, http.StatusOK, map[string]string{"status": "ready"})
 	})
 
+	// Uploaded images are served from a persistent disk directory, never from
+	// SQLite (PRD §10.6). Mounted before /api so it cannot be shadowed.
+	media.RegisterMedia(r, d)
+
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public routes are registered directly on r.
-		// [R1] auth.Register(r, d)
-		// [R1] users.Register(r, d)
-		// [R1] anime.Register(r, d)
-		// [R1] communities.Register(r, d)
-		// [R1] posts.Register(r, d)
-		// [R1] comments.Register(r, d)
-		// [R1] search.Register(r, d)
-		// [R1] notifications.Register(r, d)
-		// [R1] moderation.Register(r, d)
+		// Public routes. Handlers that need to know the viewer call
+		// d.SessionUserID(r) directly for privacy filtering.
+		auth.Register(r, d)
+		users.Register(r, d)
+		anime.Register(r, d)
+		communities.Register(r, d)
+		posts.Register(r, d)
+		feed.Register(r, d)
+		search.Register(r, d)
+
+		// Authenticated routes. With() shares chi's route tree, so these
+		// cannot shadow public routes; auth is also enforced in handlers.
+		protected := r.With(shared.RequireAuth(d))
+		auth.RegisterProtected(protected, d)
+		users.RegisterProtected(protected, d)
+		communities.RegisterProtected(protected, d)
+		posts.RegisterProtected(protected, d)
+		media.RegisterProtected(protected, d)
+		notifications.RegisterProtected(protected, d)
+		moderation.RegisterProtected(protected, d)
+
 		// [R2] events.Register(r, d)
 		// [R2] teamups.Register(r, d)
 		// [R3] chat.Register(r, d)
 		// [R4] discovery.Register(r, d)
 		// [R5] adult.Register(r, d) // gated by FEATURE_ADULT_DATING
-
-		// Protected routes go through RequireAuth; with() shares the parent
-		// routing tree, so adding routes here cannot shadow public ones.
-		protected := r.With(shared.RequireAuth(d))
-		_ = protected // reserved for release 1 registration
-		// [R1] auth.RegisterProtected(protected, d)
-		// [R1] users.RegisterProtected(protected, d)
-		// [R1] posts.RegisterProtected(protected, d)
-		// [R1] moderation.RegisterProtected(protected, d)
 
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 			shared.WriteError(w, http.StatusNotFound, shared.CodeNotFound, "Endpoint not found.")

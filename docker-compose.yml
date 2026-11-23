@@ -25,6 +25,10 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       SESSION_SECRET: ${SESSION_SECRET:-change-me}
       FEATURE_ADULT_DATING: ${FEATURE_ADULT_DATING:-false}
+      # Uploaded images live on disk, never in SQLite (PRD §10.6).
+      MEDIA_PATH: /data/media
+      # Optional: bootstrap one email as platform moderator for local testing.
+      PLATFORM_MODERATOR_EMAIL: ${PLATFORM_MODERATOR_EMAIL:-}
     volumes:
       - promisedland-data:/data
     networks:

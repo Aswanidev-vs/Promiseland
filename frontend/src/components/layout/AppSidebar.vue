@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import WayfinderMark from '@/components/ui/WayfinderMark.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import type { IconName } from '@/components/ui/icons'
@@ -10,16 +12,22 @@ interface NavItem {
   to?: string
 }
 
-// R1/R2/R3: give these items their real `to` values when the routes land.
-const items: NavItem[] = [
-  { label: 'Home', icon: 'home', to: '/' },
-  { label: 'Communities', icon: 'communities' },
+const auth = useAuthStore()
+
+const profileTo = computed(() =>
+  auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
+)
+
+// Events, Chat and Discover stay marked "Soon" until R2–R4.
+const items = computed<NavItem[]>(() => [
+  { label: 'Home', icon: 'home', to: '/home' },
+  { label: 'Communities', icon: 'communities', to: '/communities' },
   { label: 'Events', icon: 'events' },
   { label: 'Chat', icon: 'chat' },
   { label: 'Discover', icon: 'discover' },
-  { label: 'Notifications', icon: 'bell' },
-  { label: 'Profile', icon: 'profile' },
-]
+  { label: 'Notifications', icon: 'bell', to: '/notifications' },
+  { label: 'Profile', icon: 'profile', to: profileTo.value },
+])
 </script>
 
 <template>

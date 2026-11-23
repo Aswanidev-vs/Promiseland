@@ -9,17 +9,99 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Your fandom. Your people. Your place.' },
   },
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // R1 agents: register the real application routes here and remove the
-  // placeholder disabled nav items in AppSidebar.vue / MobileNav.vue:
-  //   /home (HomeFeedView), /communities, /c/:slug, /events,
-  //   /discover, /notifications, /u/:username, /search,
-  //   /login (meta.guestOnly), /register (meta.guestOnly),
-  //   /settings, /moderation — and mark account-only views with
-  //   meta: { requiresAuth: true }.
-  // R2 agents: add /events/:id, /events/new, /team-ups.
-  // R3 agents: add /chat, /chat/servers/:id and the WebSocket client.
-  // ─────────────────────────────────────────────────────────────────────────────
+  // Public account recovery / verification.
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/LoginView.vue'),
+    meta: { title: 'Sign in', guestOnly: true },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { title: 'Create account', guestOnly: true },
+  },
+  {
+    path: '/verify-email',
+    name: 'verify-email',
+    component: () => import('@/views/VerifyEmailView.vue'),
+    meta: { title: 'Verify your email' },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('@/views/ResetPasswordView.vue'),
+    meta: { title: 'Reset password' },
+  },
+
+  // Authenticated application.
+  {
+    path: '/home',
+    name: 'home',
+    component: () => import('@/views/HomeView.vue'),
+    meta: { title: 'Home', requiresAuth: true },
+  },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('@/views/OnboardingView.vue'),
+    meta: { title: 'Set up your profile', requiresAuth: true },
+  },
+  {
+    path: '/communities',
+    name: 'communities',
+    component: () => import('@/views/CommunitiesView.vue'),
+    meta: { title: 'Communities', requiresAuth: true },
+  },
+  {
+    path: '/communities/:slug',
+    name: 'community',
+    component: () => import('@/views/CommunityView.vue'),
+    meta: { title: 'Community', requiresAuth: true },
+  },
+  {
+    path: '/posts/new',
+    name: 'create-post',
+    component: () => import('@/views/CreatePostView.vue'),
+    meta: { title: 'Create post', requiresAuth: true },
+  },
+  {
+    path: '/posts/:id',
+    name: 'post',
+    component: () => import('@/views/PostView.vue'),
+    meta: { title: 'Discussion', requiresAuth: true },
+  },
+  {
+    path: '/u/:username',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { title: 'Profile', requiresAuth: true },
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: () => import('@/views/SearchView.vue'),
+    meta: { title: 'Search', requiresAuth: true },
+  },
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/NotificationsView.vue'),
+    meta: { title: 'Notifications', requiresAuth: true },
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { title: 'Settings', requiresAuth: true },
+  },
+  {
+    path: '/moderation',
+    name: 'moderation',
+    component: () => import('@/views/ModerationView.vue'),
+    meta: { title: 'Moderation', requiresAuth: true },
+  },
 
   {
     path: '/:pathMatch(.*)*',
@@ -36,19 +118,19 @@ export const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  document.title = to.meta.title ? `${to.meta.title} — PromisedLand` : 'PromisedLand'
+  if (typeof document !== 'undefined') {
+    document.title = to.meta.title ? `${to.meta.title} — PromisedLand` : 'PromisedLand'
+  }
 
   const auth = useAuthStore()
   if (to.meta.requiresAuth || to.meta.guestOnly) await auth.ensureLoaded()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    // R1: replace with { name: 'login', query: { next: to.fullPath } }.
-    return { name: 'landing', query: { next: to.fullPath } }
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.guestOnly && auth.isAuthenticated) {
-    // R1: replace with { name: 'home' }.
-    return { name: 'landing' }
+    return { name: 'home' }
   }
 
   return true

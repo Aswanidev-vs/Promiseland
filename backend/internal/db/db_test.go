@@ -50,6 +50,16 @@ func TestOpenAndMigrate(t *testing.T) {
 		t.Errorf("busy_timeout = %q, want 5000", got)
 	}
 
+	// Every embedded migration is tracked exactly once, even as later
+	// releases add more files.
+	var applied int
+	if err := database.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&applied); err != nil {
+		t.Fatalf("count migrations: %v", err)
+	}
+	if applied < 1 {
+		t.Fatalf("schema_migrations rows = %d, want at least 1", applied)
+	}
+
 	// Idempotency: a second run must not re-apply or error.
 	if err := Migrate(database, logger); err != nil {
 		t.Fatalf("second Migrate: %v", err)
@@ -58,8 +68,8 @@ func TestOpenAndMigrate(t *testing.T) {
 	if err := database.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count migrations: %v", err)
 	}
-	if count != 1 {
-		t.Errorf("schema_migrations rows = %d, want 1", count)
+	if count != applied {
+		t.Errorf("schema_migrations rows = %d after second run, want %d", count, applied)
 	}
 }
 

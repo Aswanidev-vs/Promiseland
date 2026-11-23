@@ -78,6 +78,48 @@ Chat (R3): `GET/POST /chat/servers`, `GET/POST /chat/servers/:id/channels`, `GET
 Discovery (R4): `GET /discovery/friends`, `POST /connections`, `PATCH /connections/:id`.
 Adult (R5): gated by `FEATURE_ADULT_DATING`; off by default; explicit age gate and separate namespace `/adult/*`.
 
+## Release 1 cross-agent contract (R1)
+
+### Backend JSON shapes (exact keys — every R1 backend agent produces/consumes these)
+
+- `UserSummary`: `{id:int64, username:string, display_name:string, avatar_url:string|null}`
+- `User`: `{id, email (self only), username, display_name, avatar_url, banner_url, bio, location, visibility, discoverable, created_at}`
+- `UserProfile` extends `User` with `interests: Interest[]`, `anime_interests: AnimeInterest[]`, `follower_count`, `following_count`, `post_count`, `is_following:boolean`, `is_blocked:boolean`
+- `Interest`: `{id, name, category}`; `Anime`: `{id, external_id, title, alternate_title, format}`; `AnimeInterest`: `{anime:Anime, interest_type:string, sort_order:int}`
+- `Community`: `{id, name, slug, description, icon_url, banner_url, visibility:'public'|'private', member_count, post_count, role:'owner'|'moderator'|'member'|null, is_member:boolean, created_at}`
+- `CommunityRule`: `{id, community_id, title, body, sort_order}`
+- `Post`: `{id, author:UserSummary, community:Community|null, type:'text'|'link'|'image'|'question'|'poll'|'announcement', title, body, link_url, media:Media[], anime:Anime[], tags:string[], spoiler:boolean, spoiler_note, season, episode, vote_score:int, my_vote:-1|0|1, comment_count:int, bookmarked:boolean, created_at, updated_at, edited_at}`
+- `Media`: `{id, url, mime_type, size_bytes, width, height}`
+- `Post.poll` (optional): `{question:string, options:[{id:int64,text:string,votes:int}], total_votes:int, my_vote:int64|null}`
+- `Comment`: `{id, post_id, author:UserSummary, parent_id:int64|null, body, created_at, edited_at, deleted:boolean}`
+- `Notification`: `{id, type, actor:UserSummary|null, target_type, target_id, read_at, created_at, data:object}`
+- `Report`: `{id, reporter_id, target_type, target_id, reason, details, status, created_at}`
+- `Page<T>`: `{items:T[], next_cursor:string}` (empty string when no more pages)
+
+Voting model: one consistent upvote/downvote per user per post (`my_vote` -1/0/1, `vote_score` aggregated). Do not expose a separate reaction count.
+
+### R1 frontend API module exports (F1 writes, F2 imports — signatures are a contract)
+
+`src/api/auth.ts`: `register(i:{email,password,username,displayName}): Promise<User>`, `login(i:{email,password}): Promise<User>`, `logout(): Promise<void>`, `getMe(): Promise<User>`, `verifyEmail(token:string): Promise<void>`, `requestPasswordReset(email:string): Promise<void>`, `confirmPasswordReset(token:string,password:string): Promise<void>`.
+
+`src/api/users.ts`: `getUser(username:string): Promise<UserProfile>`, `updateMe(patch:Partial<User>): Promise<User>`, `listInterests(): Promise<Interest[]>`, `updateInterests(ids:number[]): Promise<UserProfile>`, `updateAnimeInterests(items:{animeId:number,interestType:string}[]): Promise<UserProfile>`, `followUser(id:number): Promise<void>`, `unfollowUser(id:number): Promise<void>`, `blockUser(id:number): Promise<void>`, `unblockUser(id:number): Promise<void>`, `updateSettings(patch:{visibility?:string,discoverable?:boolean}): Promise<User>`.
+
+`src/api/anime.ts`: `searchAnime(q:string): Promise<Anime[]>`, `getAnime(id:number): Promise<Anime>`, `listGenres(): Promise<Genre[]>`.
+
+`src/api/communities.ts`: `listCommunities(p:{q?,limit?,cursor?}): Promise<Page<Community>>`, `getCommunity(slug:string): Promise<Community>`, `createCommunity(i:{name,slug,description,visibility,rules?}): Promise<Community>`, `updateCommunity(slug:string,patch:Partial<Community>): Promise<Community>`, `joinCommunity(slug:string): Promise<void>`, `leaveCommunity(slug:string): Promise<void>`, `listRules(slug:string): Promise<CommunityRule[]>`, `listMembers(slug:string,p?): Promise<Page<UserSummary>>`, `listCommunityPosts(slug:string,p?): Promise<Page<Post>>`, `addModerator(slug:string,userId:number): Promise<void>`.
+
+`src/api/posts.ts`: `getFeed(p:{scope?:'for-you'|'following',community?,limit?,cursor?}): Promise<Page<Post>>`, `getPost(id:number): Promise<Post>`, `createPost(i:{communitySlug?,type,title,body,linkUrl?,mediaIds?,animeIds?,tags?,spoiler?,spoilerNote?,season?,episode?}): Promise<Post>`, `updatePost(id:number,patch:Partial<Post>): Promise<Post>`, `deletePost(id:number): Promise<void>`, `listComments(id:number,p?): Promise<Page<Comment>>`, `addComment(id:number,body:string,parentId?:number): Promise<Comment>`, `votePost(id:number,vote:-1|0|1): Promise<Post>`, `bookmarkPost(id:number): Promise<void>`, `unbookmarkPost(id:number): Promise<void>`, `uploadMedia(file:File): Promise<Media>`.
+
+`src/api/search.ts`: `search(p:{q:string,type?:'users'|'communities'|'posts',limit?,cursor?}): Promise<{users:UserSummary[],communities:Community[],posts:Post[]}>`.
+
+`src/api/notifications.ts`: `listNotifications(p?): Promise<Page<Notification>>`, `markRead(id:number): Promise<void>`, `markAllRead(): Promise<void>`.
+
+`src/api/moderation.ts`: `report(i:{targetType,targetId,reason,details?}): Promise<void>`, `listReports(p?): Promise<Page<Report>>`, `resolveReport(id:number,i:{action:string,reason:string}): Promise<void>`.
+
+### R1 routes (F1 writes into router/index.ts; F2 creates the matching views)
+
+`/home` HomeView · `/communities` CommunitiesView · `/communities/:slug` CommunityView · `/posts/new` CreatePostView · `/posts/:id` PostView · `/u/:username` ProfileView · `/search` SearchView · `/notifications` NotificationsView · `/settings` SettingsView · `/onboarding` OnboardingView · `/verify-email` VerifyEmailView · `/reset-password` ResetPasswordView · `/moderation` ModerationView. All authenticated except `/verify-email`, `/reset-password`, `/login`, `/register`.
+
 ## Git
 
 One commit per release phase. Do not commit until the orchestrator (main agent) verifies and stages.

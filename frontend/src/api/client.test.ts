@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, api, request } from './client'
+import { ApiError, api, buildQuery, requestForm, request } from './client'
 
 function jsonResponse(status: number, body: unknown, statusText = 'Status text'): Response {
   return {
@@ -97,5 +97,34 @@ describe('request', () => {
     const postInit = vi.mocked(fetch).mock.calls[0]![1] as RequestInit
     expect(postInit.body).toBe('{"name":"Sailor Moon"}')
     expect(new Headers(postInit.headers).get('Content-Type')).toBe('application/json')
+  })
+})
+
+describe('buildQuery', () => {
+  it('serialises filters in order and skips empty values', () => {
+    expect(
+      buildQuery({ q: 'sailor moon', type: 'communities', limit: 20, cursor: '', scope: undefined }),
+    ).toBe('?q=sailor+moon&type=communities&limit=20')
+    expect(buildQuery({ cursor: 'abc', spoiler: false, n: 0 })).toBe('?cursor=abc&spoiler=false&n=0')
+    expect(buildQuery({})).toBe('')
+    expect(buildQuery()).toBe('')
+  })
+})
+
+describe('requestForm', () => {
+  it('leaves multipart Content-Type to the browser', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { id: 1 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const form = new FormData()
+    form.append('file', new File(['image'], 'art.png', { type: 'image/png' }))
+
+    await requestForm('/media', form)
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/media')
+    expect(init.method).toBe('POST')
+    expect(init.body).toBe(form)
+    expect(new Headers(init.headers).has('Content-Type')).toBe(false)
+    expect(new Headers(init.headers).get('Accept')).toBe('application/json')
   })
 })

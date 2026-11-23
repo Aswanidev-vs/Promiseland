@@ -1,22 +1,29 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import type { IconName } from '@/components/ui/icons'
 
-// R1/R2: attach real `to` values as these routes ship.
 interface Tab {
   label: string
   icon: IconName
   to?: string
 }
 
-const tabs: Tab[] = [
-  { label: 'Home', icon: 'home', to: '/' },
-  { label: 'Communities', icon: 'communities' },
+const auth = useAuthStore()
+
+const profileTo = computed(() =>
+  auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
+)
+
+const tabs = computed<Tab[]>(() => [
+  { label: 'Home', icon: 'home', to: '/home' },
+  { label: 'Communities', icon: 'communities', to: '/communities' },
   { label: 'Events', icon: 'events' },
-  { label: 'Notifications', icon: 'bell' },
-  { label: 'Profile', icon: 'profile' },
-]
+  { label: 'Notifications', icon: 'bell', to: '/notifications' },
+  { label: 'Profile', icon: 'profile', to: profileTo.value },
+])
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-import type { ApiErrorBody } from '@/types'
+import type { ApiErrorBody, QueryValue } from '@/types'
 
 /** All REST calls are versioned under this prefix (PRD §14). */
 export const API_BASE = '/api/v1'
@@ -25,13 +25,29 @@ function joinPath(path: string): string {
 }
 
 /**
+ * Stable, ordered query strings for list endpoints. Empty, null and undefined
+ * values are omitted so callers can pass partial filter objects directly.
+ */
+export function buildQuery(params: Record<string, QueryValue> = {}): string {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue
+    search.set(key, String(value))
+  }
+  const query = search.toString()
+  return query ? `?${query}` : ''
+}
+
+/**
  * Typed request helper. Sends cookies, always asks for JSON, and normalises
  * errors into ApiError so callers never branch on raw Response objects.
  */
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-  if (init.body !== undefined && !headers.has('Content-Type')) {
+  // Let the browser set multipart boundaries for FormData uploads.
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
+  if (init.body !== undefined && !isFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 
@@ -66,6 +82,16 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   return (await response.json()) as T
 }
 
+/** Stable human-readable message for error toasts and inline states. */
+export function errorMessage(error: unknown, fallback = 'Something went wrong. Try again.'): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+/** POST a FormData body. The browser supplies the multipart Content-Type. */
+export function requestForm<T>(path: string, form: FormData, init: RequestInit = {}): Promise<T> {
+  return request<T>(path, { ...init, method: 'POST', body: form })
+}
+
 function withMethod<T>(path: string, method: string, init: RequestInit = {}): Promise<T> {
   return request<T>(path, { ...init, method })
 }
@@ -73,6 +99,7 @@ function withMethod<T>(path: string, method: string, init: RequestInit = {}): Pr
 /** Thin, extensible facade. Domain modules can add typed helpers later. */
 export const api = {
   request,
+  requestForm,
   get: <T>(path: string, init?: RequestInit) => withMethod<T>(path, 'GET', init),
   post: <T>(path: string, body?: unknown, init?: RequestInit) =>
     withMethod<T>(path, 'POST', { ...init, body: body === undefined ? undefined : JSON.stringify(body) }),

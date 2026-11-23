@@ -1,30 +1,34 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { computed, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useUiStore } from '@/stores/ui'
+import { useNotificationsStore } from '@/stores/notifications'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Avatar from '@/components/ui/Avatar.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import WayfinderMark from '@/components/ui/WayfinderMark.vue'
 
+const router = useRouter()
 const auth = useAuthStore()
-const ui = useUiStore()
+const notifications = useNotificationsStore()
 
-// R1: wire these buttons to /login and /register once the auth views exist.
-function announceAccounts(): void {
-  ui.pushToast({
-    title: 'Accounts arrive in Release 1',
-    message: 'Sign-in and registration are part of the social foundation.',
-  })
-}
+const query = ref('')
+const profileTo = computed(() =>
+  auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
+)
 
-async function signOut(): Promise<void> {
-  try {
-    await auth.logout()
-    ui.pushToast({ title: 'You are signed out', tone: 'success' })
-  } catch {
-    ui.pushToast({ title: 'Could not sign out', message: 'Check your connection and try again.', tone: 'error' })
-  }
+watch(
+  () => auth.isAuthenticated,
+  (signedIn) => {
+    if (signedIn) void notifications.load()
+  },
+  { immediate: true },
+)
+
+function submitSearch(): void {
+  const q = query.value.trim()
+  if (!q) return
+  void router.push({ name: 'search', query: { q } })
 }
 </script>
 
@@ -35,22 +39,40 @@ async function signOut(): Promise<void> {
       <span>PromisedLand</span>
     </RouterLink>
 
-    <button type="button" class="topbar__search" @click="announceAccounts">
-      <AppIcon name="search" :size="18" />
-      <span class="topbar__search-text">Search communities, posts, events</span>
-    </button>
+    <form class="topbar__search" role="search" @submit.prevent="submitSearch">
+      <label class="sr-only" for="topbar-search">Search PromisedLand</label>
+      <button type="submit" class="topbar__search-submit" aria-label="Search">
+        <AppIcon name="search" :size="18" />
+      </button>
+      <input
+        id="topbar-search"
+        v-model="query"
+        class="topbar__search-input"
+        type="search"
+        name="q"
+        placeholder="Search communities, posts, events"
+      />
+    </form>
 
     <div class="topbar__actions">
       <template v-if="auth.isAuthenticated">
-        <Avatar :name="auth.user?.displayName || auth.user?.username || 'Member'" size="sm" />
-        <BaseButton variant="ghost" size="sm" @click="signOut">
+        <RouterLink to="/notifications" class="topbar__bell" :aria-label="`Notifications, ${notifications.unreadCount} unread`">
+          <AppIcon name="bell" :size="20" />
+          <span v-if="notifications.unreadCount > 0" class="topbar__badge" aria-hidden="true">
+            {{ notifications.unreadCount > 9 ? '9+' : notifications.unreadCount }}
+          </span>
+        </RouterLink>
+        <RouterLink :to="profileTo" class="topbar__profile" aria-label="Your profile">
+          <Avatar :name="auth.user?.display_name || auth.user?.username || 'Member'" :src="auth.user?.avatar_url" size="sm" />
+        </RouterLink>
+        <BaseButton variant="ghost" size="sm" aria-label="Sign out" @click="auth.logout()">
           <AppIcon name="logout" :size="16" />
-          Sign out
+          <span class="topbar__signout-label">Sign out</span>
         </BaseButton>
       </template>
       <template v-else>
-        <BaseButton variant="ghost" size="sm" @click="announceAccounts">Sign in</BaseButton>
-        <BaseButton variant="secondary" size="sm" @click="announceAccounts">Create account</BaseButton>
+        <BaseButton variant="ghost" size="sm" to="/login">Sign in</BaseButton>
+        <BaseButton variant="secondary" size="sm" to="/register">Create account</BaseButton>
       </template>
     </div>
   </div>
@@ -86,26 +108,63 @@ async function signOut(): Promise<void> {
   display: flex;
   flex: 1;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-height: 44px;
   max-width: 440px;
-  padding: 0 var(--space-3);
+  padding-inline: var(--space-2);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-secondary);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease);
 }
 
 .topbar__search:hover {
   border-color: var(--border-strong);
+}
+
+.topbar__search:focus-within {
+  border-color: var(--ember);
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+.topbar__search-submit {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.topbar__search-submit:hover {
   color: var(--text-primary);
 }
 
-.topbar__search-text {
+.topbar__search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
   font-size: var(--text-sm);
+}
+
+.topbar__search-input:focus {
+  outline: none;
+}
+
+.topbar__search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .topbar__actions {
@@ -113,6 +172,43 @@ async function signOut(): Promise<void> {
   align-items: center;
   gap: var(--space-2);
   margin-left: auto;
+}
+
+.topbar__bell,
+.topbar__profile {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+}
+
+.topbar__bell:hover,
+.topbar__profile:hover {
+  background: var(--ink-800);
+  color: var(--text-primary);
+}
+
+.topbar__badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--ember);
+  color: var(--ink-900);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 @media (max-width: 767px) {
@@ -129,11 +225,14 @@ async function signOut(): Promise<void> {
   }
 
   .topbar__search {
-    justify-content: center;
     max-width: none;
   }
 
-  .topbar__search-text {
+  .topbar__search-input::placeholder {
+    color: transparent;
+  }
+
+  .topbar__signout-label {
     display: none;
   }
 }
