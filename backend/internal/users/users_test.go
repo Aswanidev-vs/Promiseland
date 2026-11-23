@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	migrations "github.com/Aswanidev-vs/promiseland/backend/migrations"
 	"github.com/go-chi/chi/v5"
 )
@@ -29,10 +29,7 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "users.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
+	database, _ := testutil.TempDB(t, "users.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
@@ -433,11 +430,7 @@ func itoa(value int64) string {
 }
 
 func TestMigration001BackfillsLegacyUsernames(t *testing.T) {
-	database, err := db.Open(filepath.Join(t.TempDir(), "legacy.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	defer func() { _ = database.Close() }()
+	database, _ := testutil.TempDB(t, "legacy.db")
 	foundation, err := migrations.FS.ReadFile("000_foundation.sql")
 	if err != nil {
 		t.Fatalf("read 000: %v", err)

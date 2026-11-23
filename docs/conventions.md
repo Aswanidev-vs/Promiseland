@@ -225,6 +225,27 @@ Rules: mutual blocks exclude candidates; private profiles and `discoverable=fals
 ### R4 routes (F1 adds; F2 creates views)
 `/discover` DiscoverView (auth) · `/connections` ConnectionsView (auth). Activate the Discover nav item; Chat is now active too.
 
+## Release 5 cross-agent contract (R5 — GATED, NOT LAUNCH-READY)
+
+PRD §7.14 requires independent validation, age assurance, legal review, safety policy and moderation capacity before launch. This release delivers a **disabled-by-default scaffold only**. `FEATURE_ADULT_DATING` defaults to `false`; when false every `/adult/*` endpoint returns `404 not_found` and no UI link is rendered. Even when enabled, eligibility is enforced by an `AgeAssurance` interface whose default implementation **denies everyone**. A real provider must be integrated before any real use.
+
+### Migrations
+R5 owns `021_adult.sql` (profiles, likes, matches, verifications).
+
+### JSON shapes
+- `AdultStatus`: `{enabled:boolean, ageAssurance:'none'|'development_stub', eligible:boolean, message:string}`
+- `AdultProfile`: `{user_id:int64, display_name:string, intent:'friendship'|'dating'|'both', bio:string, boundaries:string, visibility:'opt_in', created_at:string}`
+- `AdultLike`: `{actor_id:int64, target_id:int64, status:'like'|'pass', created_at:string}`
+- `AdultMatch`: `{id:int64, users:[UserSummary,UserSummary], created_at:string, conversation_id:int64|null, unmatched_at:string|null}`
+
+### Endpoints (all under `/adult/*`, gated)
+`GET /adult/status` (safe, returns disabled state without revealing eligibility data) · `GET/PUT /adult/profile` (opt-in profile; requires eligibility) · `POST /adult/like/{userId}` `{status:'like'|'pass'}` (mutual like creates a match and a chat conversation for the two users) · `GET /adult/matches` · `POST /adult/matches/{id}/unmatch` · `POST /adult/reports` `{targetType,targetId,reason,details?}` (writes a high-priority row to the existing `reports` table via `target_type='adult_profile'`). Dev-only when `APP_ENV=development` AND flag enabled: `POST /adult/dev/verify` — never available in production.
+
+Safety rules: no exact/live location, phone, or private contact fields anywhere; users who have not opted in are never visible; matches require two positive actions; either user can unmatch or block immediately; all adult safety reports enter a high-priority moderation path; no inference of romantic intent from ordinary interests or activity.
+
+### R5 frontend
+A single gated route `/adult` → `AdultView.vue` (no nav link). It calls `GET /adult/status` and shows a clear "not available / eligibility requirements" state when disabled or ineligible; only when enabled+eligible does it show the gated profile/matches UI. API module `src/api/adult.ts` with `getAdultStatus`, `getAdultProfile`, `saveAdultProfile`, `likeAdult(userId,status)`, `listAdultMatches()`, `unmatch(id)`, `reportAdult(i)`.
+
 ## Git
 
 One commit per release phase. Do not commit until the orchestrator (main agent) verifies and stages.

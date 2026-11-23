@@ -186,6 +186,15 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Connections', requiresAuth: true },
   },
 
+  // Release 5 — opt-in adults-only area. Gated on the server and deliberately
+  // unlinked from every navigation surface; reachable only by direct URL.
+  {
+    path: '/adult',
+    name: 'adult',
+    component: () => import('@/views/AdultView.vue'),
+    meta: { title: 'Adult area', requiresAuth: true },
+  },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',

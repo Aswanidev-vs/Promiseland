@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	neturl "net/url"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/gorilla/websocket"
 )
 
@@ -29,11 +29,7 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T, checker func(int64, int64, int64) bool) *testEnv {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "realtime.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = database.Close() })
+	database, _ := testutil.TempDB(t, "realtime.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatal(err)
 	}

@@ -67,6 +67,7 @@ docs/
   threat-model.md    assets, trust boundaries, mitigations
   decisions/         architecture decision records
   operations.md      local dev, health, backups, rollback
+  adult-safety.md    R5 gate: disabled adult area, prerequisites, launch checklist
   conventions.md     shared engineering contract
   design-system.md   shared visual contract
 .github/workflows/   CI checks (no deploy job yet)
@@ -86,7 +87,8 @@ Copy `.env.example` to `.env`. Key variables:
 | `APP_ENV` | `development` | `production` enables Secure cookies |
 | `CORS_ORIGIN` | `http://localhost:5173` | Allowed browser origin |
 | `SESSION_SECRET` | `change-me` | Replace for any non-local use |
-| `FEATURE_ADULT_DATING` | `false` | Adults-only module gate (off by default) |
+| `FEATURE_ADULT_DATING` | `false` | R5 adults-only module gate (off by default) |
+| `ADULT_AGE_ASSURANCE` | `none` | R5 eligibility mode: `none` denies everyone; `development_stub` is dev-only, never production. See `docs/adult-safety.md` |
 | `API_UPSTREAM` | `http://api:8080` | Frontend nginx → API runtime upstream |
 | `VITE_API_BASE_URL` | *(empty)* | Optional frontend build-time base path |
 
@@ -104,6 +106,13 @@ CI runs the same checks on pushes to `main` and on pull requests. Image publishi
 
 ## Implementation status
 
-**Release 0 — Technical foundation (in progress):** repository structure and conventions, Vue app shell, Go bootstrap and configuration, SQLite connection and migration runner, Dockerfiles, Docker Compose, health endpoints, structured logs, and CI checks.
+| Release | Status |
+|---|---|
+| R0 — Technical foundation | **Implemented:** repo structure/conventions, Vue shell, Go bootstrap/config, SQLite + migration runner, Dockerfiles, Compose, health endpoints, structured logs, CI checks |
+| R1 — Social foundation | **Implemented:** auth, profiles/interests, communities, posts/comments/voting, feed, search, notifications, reporting/moderation, responsive UI |
+| R2 — Creator & events | **Implemented:** creator categories, events + RSVP, team-ups, related endpoints/views |
+| R3 — Community communication | **Implemented:** chat servers/channels, conversations, messages, WebSocket hub, presence/typing, chat moderation |
+| R4 — Interest discovery | **Implemented:** friend discovery, connections, user-controlled discoverability |
+| R5 — Optional adult dating | **Gated scaffold present but disabled and incomplete — NOT launch-ready.** Kept off by `FEATURE_ADULT_DATING=false` and `ADULT_AGE_ASSURANCE=none` (deny-all). Eligibility/age assurance, legal review, safety policy, moderation/appeals and the `/adult/*` implementation are outstanding. See `docs/adult-safety.md` before any enablement. |
 
-All `/api/v1` product endpoints are **planned** for later releases (social foundation in R1, creators/events in R2, chat in R3, discovery in R4, optional adults-only dating in R5). See `docs/api.md` for the contract and status per endpoint. The Docker/AWS setup is the documented target topology; production deployment, backup/restore validation, and ECR publishing remain to be exercised before launch.
+R0–R4 modules, migrations and endpoints are present in the codebase; see `docs/api.md` for the endpoint contract and status. The Docker/AWS setup is the documented target topology; production deployment, backup/restore validation and ECR publishing remain to be exercised before launch. Do not treat the R5 scaffold as a completed or shippable feature.

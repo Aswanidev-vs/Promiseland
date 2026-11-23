@@ -600,3 +600,65 @@ export interface ListConnectionsParams extends PaginationParams {
   status?: ConnectionStatus
   direction?: ConnectionDirection
 }
+
+// ── Release 5 wire DTOs (gated — docs/conventions.md §R5) ──
+
+/** Age-assurance backend in use. The default implementation denies everyone. */
+export type AdultAgeAssurance = 'none' | 'development_stub'
+/** Separate friendship/dating intent; never inferred from ordinary activity. */
+export type AdultIntent = 'friendship' | 'dating' | 'both'
+export type AdultLikeStatus = 'like' | 'pass'
+
+/**
+ * Safe, gate-check response. `enabled` reflects FEATURE_ADULT_DATING;
+ * `eligible` reflects the age-assurance check. Neither is implied by the other.
+ */
+export interface AdultStatus {
+  enabled: boolean
+  ageAssurance: AdultAgeAssurance
+  eligible: boolean
+  message: string
+}
+
+/** Opt-in profile. Visibility is fixed to `opt_in` by the server. */
+export interface AdultProfile {
+  user_id: number
+  display_name: string
+  intent: AdultIntent
+  bio: string
+  boundaries: string
+  visibility: 'opt_in'
+  created_at: string
+}
+
+export interface AdultLike {
+  actor_id: number
+  target_id: number
+  status: AdultLikeStatus
+  created_at: string
+}
+
+/** A match exists only after two positive actions. */
+export interface AdultMatch {
+  id: number
+  users: [UserSummary, UserSummary]
+  created_at: string
+  conversation_id: number | null
+  unmatched_at: string | null
+}
+
+// ── Release 5 request inputs (camelCase client → snake_case wire in api/) ──
+
+export interface AdultProfileInput {
+  displayName: string
+  intent: AdultIntent
+  bio: string
+  boundaries: string
+}
+
+export interface AdultReportInput {
+  targetType: string
+  targetId: number
+  reason: string
+  details?: string
+}

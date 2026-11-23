@@ -95,3 +95,49 @@ Never restore a backup taken before a migration into a newer schema without a te
 | Backup + restore to a clean environment | To test before launch |
 | Deployment rollback | To test before launch |
 | ECR publishing / scripted deploy / CI deploy job | Deferred (PRD §11.3) |
+
+## Adult area (R5) — keep disabled, enable only after sign-off
+
+> The adult area is a **disabled-by-default scaffold, not launch-ready**. The definitive gate is `docs/adult-safety.md`; every check below is a hard prerequisite, not a formality. Residual risk is HIGH until the `docs/adult-safety.md` launch checklist is complete.
+
+### Keeping the feature disabled in every deployed environment
+
+- Leave **`FEATURE_ADULT_DATING=false`** and **`ADULT_AGE_ASSURANCE=none`** in the environment file / secret store for **development, staging and production** alike. Compose supplies these as safe defaults (`${FEATURE_ADULT_DATING:-false}`, `${ADULT_AGE_ASSURANCE:-none}`), so a missing value also fails closed.
+- Do not add a UI link or nav entry for `/adult`. With the flag off, `/adult/*` endpoints are expected to return `404 not_found` and no navigation entry is rendered.
+- `ADULT_AGE_ASSURANCE=development_stub` is valid **only** when `APP_ENV=development` AND `FEATURE_ADULT_DATING=true`. Never set the stub in staging or production; production must reject it. Treat any production occurrence as an incident.
+- Because the flag and assurance mode are environment-driven, a relaunch, container recreation or new host inherits the values from that environment — audit the `.env` / secret store on every host and after every deployment.
+
+### What to check before any enablement
+
+1. Every item in `docs/adult-safety.md` §5 is signed off by its owner (product validation, real age assurance, legal/privacy review, safety policy, moderation capacity, appeals, and all product controls).
+2. A **real age-assurance provider** replaces `none`/`development_stub`; self-entered birthdays are not accepted (PRD §7.14).
+3. `FEATURE_ADULT_DATING` is being turned on intentionally, in a reviewed change, with `APP_ENV` and the active age-assurance mode confirmed for that environment.
+4. Producer-side moderation and the high-priority adult-report queue are staffed and tested; appeals are operational.
+5. The three adult-safety red lines in `docs/adult-safety.md` §6 are verified in the built API and UI.
+6. Rollback (below) has been tested. If any check fails, do not enable.
+
+### Environment variable reference
+
+| Variable | Safe default | Meaning |
+|---|---|---|
+| `FEATURE_ADULT_DATING` | `false` | Master gate for the `/adult/*` namespace and UI. `false` → endpoints `404`, no nav link. |
+| `ADULT_AGE_ASSURANCE` | `none` | Eligibility mode. `none` = **deny-all** (no one eligible); `development_stub` = local-only test double, valid only with `APP_ENV=development` AND `FEATURE_ADULT_DATING=true`; any real provider value must be reviewed and approved before use. |
+
+Both are injected into the `api` service from Compose. See `.env.example` for the canonical comments. Stub or `none` values must never reach a production eligibility decision.
+
+### Monitoring and audit expectations for adult safety reports
+
+- Adult safety reports are written to the existing `reports` table with **`target_type='adult_profile'`** and must enter a **high-priority** moderation path (PRD §7.14; conventions R5 contract). They must not be mixed into the ordinary report queue without priority marking.
+- Alerting/ops review: monitor for the presence and volume of `target_type='adult_profile'` rows. Any such row is high priority — review, assign and resolve within the moderation SLA, and record actor, target, reason, timestamp and scope in the moderation audit log (PRD §7.15).
+- Logs must never contain age-verification secrets, private contact details, exact/live location, or sensitive eligibility data beyond what audit requires (PRD §21, §12.4). Stub `dev/verify` activity must never be emitted in production.
+- If the adult area is disabled, expect **zero** adult-profile activity; any `adult_*` request or report row while disabled is suspicious and warrants investigation.
+
+### Incident rollback — disable the flag
+
+1. Set **`FEATURE_ADULT_DATING=false`** in the affected environment's `.env` / secret store (and confirm `ADULT_AGE_ASSURANCE=none` or an approved value — never a stub in production).
+2. Recreate the API container / redeploy so the new environment takes effect: `docker compose -f docker-compose.yml -f deploy/compose/prod.yml up -d --build` (or the equivalent redeploy of the previous known-good image tag, respecting database schema compatibility as in the rollback section above).
+3. Verify `healthz`/`readyz`, then confirm `/adult/status` reports disabled and `/adult/*` endpoints return `404`.
+4. Preserve reports and moderation audit records for review; do not delete evidence during rollback.
+5. Page the safety/ops owners, review logs and any `target_type='adult_profile'` rows, and keep the feature disabled until a documented re-enable decision is made.
+
+Disabling the flag is the immediate containment action. It does not substitute for the long-term fixes in `docs/adult-safety.md`; do not re-enable until those are complete.

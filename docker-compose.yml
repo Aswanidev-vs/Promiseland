@@ -24,7 +24,12 @@ services:
       APP_ENV: ${APP_ENV:-development}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      # R5 adult area: BOTH adult flags stay off by default. The scaffold is
+      # disabled and NOT launch-ready (see docs/adult-safety.md). Keep
+      # FEATURE_ADULT_DATING=false and ADULT_AGE_ASSURANCE=none in every
+      # environment; `none` denies everyone and the dev stub is never for prod.
       FEATURE_ADULT_DATING: ${FEATURE_ADULT_DATING:-false}
+      ADULT_AGE_ASSURANCE: ${ADULT_AGE_ASSURANCE:-none}
       # Uploaded images live on disk, never in SQLite (PRD §10.6).
       MEDIA_PATH: /data/media
       # Optional: bootstrap one email as platform moderator for local testing.

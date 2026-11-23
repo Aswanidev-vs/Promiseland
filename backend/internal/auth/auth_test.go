@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -29,10 +29,7 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T, appEnv string) *testEnv {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "auth.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
+	database, _ := testutil.TempDB(t, "auth.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
@@ -54,7 +51,6 @@ func newTestEnv(t *testing.T, appEnv string) *testEnv {
 	client := &http.Client{Jar: jar, Timeout: 10 * time.Second}
 	t.Cleanup(func() {
 		server.Close()
-		_ = database.Close()
 	})
 	return &testEnv{d: deps, server: server, client: client}
 }

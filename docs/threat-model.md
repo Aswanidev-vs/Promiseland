@@ -38,7 +38,42 @@
 
 ## Explicitly future
 
-- Email verification before sensitive actions (R1), robust age assurance and full safety review for the optional dating module (R5, PRD §7.14).
+- Email verification before sensitive actions (R1), robust age assurance and full safety review for the optional dating module (R5, PRD §7.14) — see the adult-area addendum below and `docs/adult-safety.md`.
 - End-to-end encrypted messaging (out of the initial messaging scope, PRD §3.3).
 - WAF, automated dependency/image scanning in CI, and a documented incident-response runbook (PRD §11.3, §12.3).
 - Abuse-scaling controls for WebSocket chat (per-connection and per-user rate limits) when R3 ships.
+
+## Adult area addendum (R5 — disabled-by-default scaffold)
+
+> **Residual risk: HIGH until all PRD §7.14 prerequisites are met and the `docs/adult-safety.md` launch checklist is signed off.** The scaffold is not launch-ready; the entry below documents the target design and which mitigations actually exist today. Enabling `FEATURE_ADULT_DATING` does not lower this rating.
+
+### Additional assets
+
+| Asset | Why it matters |
+|---|---|
+| Age-assurance verification results / eligibility state | Determines access to a high-risk area; tampering or leakage enables minor access and privacy harm |
+| Adult opt-in profiles, intents, likes and matches | Highly sensitive; reveals romantic/sexual intent and social graph |
+| Adult safety reports (`target_type='adult_profile'`) and moderation actions | Evidence for enforcement and appeals; must be prioritised and auditable |
+| Linkage between adult and general identities | Cross-linking an adult profile to a general fandom profile is a privacy harm |
+
+### New threats and mitigations
+
+| Threat | Mitigation mapped to the scaffold | Status |
+|---|---|---|
+| **Age misrepresentation / minor access** | Deny-all `ADULT_AGE_ASSURANCE=none` by default; injectable `AgeAssurance` interface; eligibility decided server-side, never from a self-entered birthday; dev stub restricted to development | **Scaffold implemented, protected by deny-all.** Real provider **not implemented** — see below |
+| **Grooming and sexual predation** | Adults-only gate, opt-in profiles, mutual match before messaging, high-priority reporting, safety policy and education (PRD §7.14) | **Not implemented** (policy/staffing pending); scaffold boundary design only |
+| **Impersonation** | Verified eligibility + opt-in profile; report reason and high-priority moderation path; no cross-link to general profiles | **Partial** (report path designed); detection and staffing not implemented |
+| **Scams** | Safety policy on scams; report + block + high-priority review; no contact details exposed | **Not implemented** (policy/staffing pending) |
+| **Unwanted contact / harassment / sexual harassment** | Messaging only after mutual match; immediate unmatch, block and report; separate intent and visibility controls | **Scaffold implemented** (mutual match, unmatch, high-priority report); no moderation capacity yet |
+| **Location leakage** | No exact/live location, phone or private contact fields in any adult shape or endpoint | **Scaffold implemented and test-asserted** (no location/contact fields in schema or JSON); re-verify on any future change |
+| **Privacy cross-link with main profiles** | Separate namespace (`/adult/*`), separate opt-in profile, non-opted-in users never visible, no inference of intent from ordinary interests | **Scaffold implemented**; gated and unlinked, tests assert non-opted-in targets are hidden |
+| **Accidental production enablement** | `FEATURE_ADULT_DATING=false` and `ADULT_AGE_ASSURANCE=none` defaults kept off in `.env.example`, Compose and deployed `.env`; stub unavailable in production | **Partial** (defaults present in config/Compose); deployment guardrails documented in `docs/operations.md` |
+
+### Mitigations explicitly NOT yet implemented
+
+- **Real age assurance** — no real provider is integrated; `none` denies all and `development_stub` is only a local test double. A self-entered birthday must never be accepted as sufficient.
+- **Producer-side moderation staffing** — no staffed capacity to triage high-priority adult safety reports within a defined SLA.
+- **Appeals** — no appeal process for significant adult-area enforcement actions.
+- The `/adult/*` endpoints, `021_adult.sql` migration and unlinked `/adult` UI are implemented but mounted behind a 404 gate; they are unreachable with the default flags and must not be enabled until all prerequisites are met.
+
+Until these are in place — together with the independent validation, legal/privacy review, safety policy and product controls in `docs/adult-safety.md` §3 — **residual risk for the adult area remains HIGH**.

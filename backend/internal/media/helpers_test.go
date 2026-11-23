@@ -10,21 +10,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
-	"path/filepath"
 	"testing"
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/go-chi/chi/v5"
 )
 
 func testDeps(t *testing.T) (*shared.Deps, int64) {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = database.Close() })
+	database, _ := testutil.TempDB(t, "test.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatal(err)
 	}

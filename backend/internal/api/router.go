@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Aswanidev-vs/promiseland/backend/internal/adult"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/anime"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/auth"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/chat"
@@ -77,6 +78,9 @@ func New(d *shared.Deps) http.Handler {
 		creators.Register(r, d)
 		teamups.Register(r, d)
 		chat.Register(r, d)
+		// R5 is a gated scaffold: every handler 404s unless both the feature
+		// flag and a real age-assurance provider are configured.
+		adult.Register(r, d)
 
 		// Authenticated routes. With() shares chi's route tree, so these
 		// cannot shadow public routes; auth is also enforced in handlers.
@@ -93,8 +97,6 @@ func New(d *shared.Deps) http.Handler {
 		teamups.RegisterProtected(protected, d)
 		chat.RegisterProtected(protected, d)
 		discovery.RegisterProtected(protected, d)
-
-		// [R5] adult.Register(r, d) // gated by FEATURE_ADULT_DATING
 
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 			shared.WriteError(w, http.StatusNotFound, shared.CodeNotFound, "Endpoint not found.")

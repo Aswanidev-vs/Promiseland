@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -29,10 +29,7 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "discovery.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
+	database, _ := testutil.TempDB(t, "discovery.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}

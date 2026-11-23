@@ -9,12 +9,12 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -25,11 +25,7 @@ type testEnv struct {
 
 func newTestEnv(t *testing.T) *testEnv {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "teamups.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = database.Close() })
+	database, _ := testutil.TempDB(t, "teamups.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatal(err)
 	}

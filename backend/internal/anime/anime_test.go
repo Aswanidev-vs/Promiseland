@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,15 +13,13 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 	"github.com/go-chi/chi/v5"
 )
 
 func newTestHandler(t *testing.T) http.Handler {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "anime.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
+	database, _ := testutil.TempDB(t, "anime.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
@@ -36,7 +33,6 @@ func newTestHandler(t *testing.T) http.Handler {
 		Register(r, deps)
 		RegisterProtected(r, deps)
 	})
-	t.Cleanup(func() { _ = database.Close() })
 	return router
 }
 

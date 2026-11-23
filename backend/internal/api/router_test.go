@@ -8,22 +8,18 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/config"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 )
 
 func testDeps(t *testing.T) *shared.Deps {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "router.db"))
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(func() { _ = database.Close() })
+	database, _ := testutil.TempDB(t, "router.db")
 	if err := db.Migrate(database, nil); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
