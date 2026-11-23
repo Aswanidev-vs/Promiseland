@@ -14,7 +14,15 @@ import type {
 export const MEDIA_UPLOAD_PATH = '/media'
 
 export async function getFeed(p: FeedParams = {}): Promise<Page<Post>> {
-  return request<Page<Post>>(`/posts${buildQuery({ ...p })}`)
+  return request<Page<Post>>(
+    `/posts${buildQuery({
+      scope: p.scope,
+      community: p.community,
+      creatorCategory: p.creatorCategory,
+      limit: p.limit,
+      cursor: p.cursor,
+    })}`,
+  )
 }
 
 export async function getPost(id: number): Promise<Post> {
@@ -37,6 +45,7 @@ export async function createPost(input: CreatePostInput): Promise<Post> {
       spoiler_note: input.spoilerNote,
       season: input.season,
       episode: input.episode,
+      creator_category: input.creatorCategory,
     }),
   })
 }

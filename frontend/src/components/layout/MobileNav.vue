@@ -20,7 +20,7 @@ const profileTo = computed(() =>
 const tabs = computed<Tab[]>(() => [
   { label: 'Home', icon: 'home', to: '/home' },
   { label: 'Communities', icon: 'communities', to: '/communities' },
-  { label: 'Events', icon: 'events' },
+  { label: 'Events', icon: 'events', to: '/events' },
   { label: 'Notifications', icon: 'bell', to: '/notifications' },
   { label: 'Profile', icon: 'profile', to: profileTo.value },
 ])

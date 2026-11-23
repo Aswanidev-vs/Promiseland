@@ -78,28 +78,29 @@ type Poll struct {
 }
 
 type Post struct {
-	ID           int64       `json:"id"`
-	Author       UserSummary `json:"author"`
-	Community    *Community  `json:"community"`
-	Type         string      `json:"type"`
-	Title        string      `json:"title"`
-	Body         string      `json:"body"`
-	LinkURL      string      `json:"link_url"`
-	Media        []Media     `json:"media"`
-	Anime        []Anime     `json:"anime"`
-	Tags         []string    `json:"tags"`
-	Spoiler      bool        `json:"spoiler"`
-	SpoilerNote  string      `json:"spoiler_note"`
-	Season       int         `json:"season"`
-	Episode      int         `json:"episode"`
-	VoteScore    int         `json:"vote_score"`
-	MyVote       int         `json:"my_vote"`
-	CommentCount int         `json:"comment_count"`
-	Bookmarked   bool        `json:"bookmarked"`
-	CreatedAt    string      `json:"created_at"`
-	UpdatedAt    string      `json:"updated_at"`
-	EditedAt     string      `json:"edited_at"`
-	Poll         *Poll       `json:"poll,omitempty"`
+	ID              int64       `json:"id"`
+	Author          UserSummary `json:"author"`
+	Community       *Community  `json:"community"`
+	Type            string      `json:"type"`
+	Title           string      `json:"title"`
+	Body            string      `json:"body"`
+	LinkURL         string      `json:"link_url"`
+	Media           []Media     `json:"media"`
+	Anime           []Anime     `json:"anime"`
+	Tags            []string    `json:"tags"`
+	Spoiler         bool        `json:"spoiler"`
+	SpoilerNote     string      `json:"spoiler_note"`
+	Season          int         `json:"season"`
+	Episode         int         `json:"episode"`
+	CreatorCategory string      `json:"creator_category"`
+	VoteScore       int         `json:"vote_score"`
+	MyVote          int         `json:"my_vote"`
+	CommentCount    int         `json:"comment_count"`
+	Bookmarked      bool        `json:"bookmarked"`
+	CreatedAt       string      `json:"created_at"`
+	UpdatedAt       string      `json:"updated_at"`
+	EditedAt        string      `json:"edited_at"`
+	Poll            *Poll       `json:"poll,omitempty"`
 }
 
 // Comment is the exact R1 comment shape. Deleted comments keep their id and
@@ -188,4 +189,16 @@ func placeholders(n int) string {
 		return ""
 	}
 	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
+}
+
+// allowedCreatorCategories is the R2 creator-category vocabulary shared by
+// posts, creators and team-ups. An empty string means "not creator content".
+var allowedCreatorCategories = map[string]bool{
+	"":        true,
+	"cosplay": true, "crossplay": true, "fan_art": true,
+	"photography": true, "edit": true, "collection": true, "other": true,
+}
+
+func validCreatorCategory(value string) bool {
+	return allowedCreatorCategories[strings.ToLower(strings.TrimSpace(value))]
 }

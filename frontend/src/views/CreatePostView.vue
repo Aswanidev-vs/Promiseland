@@ -6,6 +6,7 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import AnimePicker from '@/components/features/AnimePicker.vue'
+import CreatorCategoryPicker from '@/components/features/CreatorCategoryPicker.vue'
 import { listCommunities } from '@/api/communities'
 import { createPost, uploadMedia } from '@/api/posts'
 import { useUiStore } from '@/stores/ui'
@@ -34,6 +35,7 @@ const body = ref('')
 const linkUrl = ref('')
 const tags = ref('')
 const anime = ref<Anime[]>([])
+const creatorCategory = ref('')
 const spoiler = ref(false)
 const spoilerNote = ref('')
 const season = ref('')
@@ -103,6 +105,7 @@ async function publish(): Promise<void> {
         .split(',')
         .map((tag) => tag.trim())
         .filter(Boolean),
+      creatorCategory: creatorCategory.value,
       spoiler: spoiler.value,
       ...(spoiler.value && spoilerNote.value.trim() ? { spoilerNote: spoilerNote.value.trim() } : {}),
       ...(season.value.trim() ? { season: season.value.trim() } : {}),
@@ -225,6 +228,15 @@ onMounted(async () => {
 
       <div class="create__field">
         <AnimePicker v-model="anime" />
+      </div>
+
+      <div class="create__field">
+        <CreatorCategoryPicker
+          :model-value="creatorCategory"
+          label="Creator category"
+          hint="Tag this as creative work so it can appear in creator portfolios."
+          @update:model-value="creatorCategory = String($event)"
+        />
       </div>
 
       <div class="create__field create__field--inline">

@@ -30,13 +30,13 @@ Typical statuses: `400` validation, `401` unauthenticated, `403` forbidden / own
 | Label | Meaning |
 |---|---|
 | **R0 — foundation** | Expected in the technical-foundation release (health only) |
-| **Planned (R1)** | Social foundation / first beta |
-| **Planned (R2)** | Creator and events |
+| **Implemented (R1)** | Social foundation / first beta |
+| **In progress (R2)** | Creator and events |
 | **Planned (R3)** | Community communication (chat) |
 | **Planned (R4)** | Interest-based discovery |
 | **Planned (R5)** | Optional, adults-only, feature-gated |
 
-All product endpoints in this document are **planned** at the time of writing; only the health endpoints belong to R0.
+R1 endpoints are implemented; R2 is in progress; R3–R5 remain planned. See `docs/conventions.md` for the authoritative request/response contracts.
 
 ## Health (R0 — foundation)
 
@@ -47,7 +47,7 @@ All product endpoints in this document are **planned** at the time of writing; o
 
 Response: `{"status":"ok"}` (illustrative). These are root paths, not under `/api/v1`.
 
-## Authentication and account (Planned R1)
+## Authentication and account (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -61,13 +61,13 @@ Response: `{"status":"ok"}` (illustrative). These are root paths, not under `/ap
 
 Illustrative shapes:
 
-- `POST /auth/register` request: `{"email":"...","password":"...","username":"..."}` → `201` with the public user resource. Passwords are hashed (bcrypt) and never returned or logged.
-- `POST /auth/login` request: `{"email":"...","password":"..."}` → `204` plus `Set-Cookie: pl_session=...; HttpOnly; SameSite=Lax; Secure (prod)`. Invalid credentials must not reveal whether the email is registered (PRD §7.1).
+- `POST /auth/register` request: `{"email":"...","password":"...","username":"...","displayName":"..."}` → `201` with the user resource plus a development-only verification token. Passwords are hashed (bcrypt) and never returned or logged.
+- `POST /auth/login` request: `{"email":"...","password":"..."}` → `200` with the user resource plus `Set-Cookie: pl_session=...; HttpOnly; SameSite=Lax; Secure (prod)`. Invalid credentials must not reveal whether the email is registered (PRD §7.1).
 - `POST /auth/verify` request: `{"token":"..."}` → success or `400` with an expired/invalid code.
 - `POST /auth/password-reset/request` request: `{"email":"..."}` → generic success regardless of account existence.
 - `POST /auth/password-reset/confirm` request: `{"token":"...","password":"..."}`; tokens expire and are single-use.
 
-## Users, profiles and interests (Planned R1)
+## Users, profiles and interests (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -90,7 +90,7 @@ Illustrative shapes:
 - `PUT /users/me/interests` body: `{"anime_title_ids":[],"interest_tag_ids":[]}` with `sort_order` preserved.
 - Follow/block responses are `204` or a small status object; blocked users cannot initiate new interactions with the blocker (PRD §7.2).
 
-## Anime metadata (Planned R1 basic, R1+ richer)
+## Anime metadata (Implemented R1 basic)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -103,7 +103,7 @@ Illustrative shapes:
 - Anime title: `{ "id", "external_id", "title", "alternate_title", "media_type" }` with optional season/episode references where reliable metadata exists.
 - External provider failure must not break core discussions; unknown episode references must not create misleading metadata (PRD §7.3).
 
-## Communities (Planned R1)
+## Communities (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -123,7 +123,7 @@ Illustrative shapes:
 - Community: `{ "id", "owner_id", "name", "slug", "description", "visibility", "rules": [], "member_count" }`. `visibility` is `public` or `private`; private communities require invitation/approval.
 - Membership: `{ "community_id", "user_id", "role", "status" }`. A client cannot grant itself a role by editing a request (PRD §7.4).
 
-## Posts and comments (Planned R1)
+## Posts and comments (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -145,7 +145,7 @@ Illustrative shapes:
 - Reactions: one consistent model chosen for v1; duplicate votes from one account are rejected where only one is allowed.
 - Bookmarking and removals return `204` or a status object; deleted content follows the documented soft-delete policy.
 
-## Search (Planned R1)
+## Search (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -153,7 +153,7 @@ Illustrative shapes:
 
 Illustrative shape: `{"items":[...],"next_cursor":"..."}`; results respect privacy and community permissions and use query limits (PRD §7.16).
 
-## Notifications (Planned R1)
+## Notifications (Implemented R1)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -162,7 +162,7 @@ Illustrative shape: `{"items":[...],"next_cursor":"..."}`; results respect priva
 
 Illustrative shape: `{ "id", "user_id", "type", "actor_id", "target_type", "target_id", "read_at" }`. Types include follower, reply, mention, reaction, community result and event update (PRD §7.11). Email/push extensions are later.
 
-## Reports and moderation (Planned R1 basic, R2+ expanded)
+## Reports and moderation (Implemented R1 basic)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -176,7 +176,7 @@ Illustrative shapes:
 - Report: `{ "id", "reporter_id", "target_type", "target_id", "reason", "details", "status" }`. Reasons: spam, harassment, impersonation, hate/abuse, inappropriate content, copyright, spoiler abuse, unsafe event, other (PRD §7.15).
 - Moderation action: `{ "id", "moderator_id", "target_type", "target_id", "action", "reason", "created_at" }`. Every action is logged with actor, target, reason, timestamp and scope.
 
-## Events (Planned R2)
+## Events (In progress R2)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -190,7 +190,7 @@ Illustrative shapes:
 
 Illustrative shape: `{ "id", "organizer_id", "title", "description", "event_type", "starts_at", "ends_at", "timezone", "venue_text", "capacity"?, "attendee_count" }`. Times are stored with an explicit timezone strategy; exact addresses and live location are never exposed by default (PRD §7.9). Capacity is enforced transactionally.
 
-## Team-ups (Planned R2)
+## Team-ups (In progress R2)
 
 | Method | Path | Purpose |
 |---|---|---|

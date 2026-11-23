@@ -174,6 +174,7 @@ type postRow struct {
 	SpoilerNote string
 	Season      int
 	Episode     int
+	CreatorCat  string
 	VoteScore   int
 	CreatedAt   string
 	UpdatedAt   string
@@ -183,7 +184,8 @@ type postRow struct {
 const postSelect = `
 SELECT p.id, p.author_id, p.community_id, p.type, p.title, p.body,
        COALESCE(p.link_url, ''), p.spoiler, COALESCE(p.spoiler_note, ''),
-       COALESCE(p.season, 0), COALESCE(p.episode, 0), p.vote_score,
+       COALESCE(p.season, 0), COALESCE(p.episode, 0),
+       COALESCE(p.creator_category, ''), p.vote_score,
        p.created_at, COALESCE(p.updated_at, p.created_at), COALESCE(p.edited_at, ''),
        COALESCE(p.is_locked, 0)
 FROM posts p`
@@ -196,7 +198,7 @@ func scanPostRows(rows *sql.Rows) ([]postRow, error) {
 		err := rows.Scan(
 			&p.ID, &p.AuthorID, &p.CommunityID, &p.Type, &p.Title, &p.Body,
 			&p.LinkURL, &spoiler, &p.SpoilerNote, &p.Season, &p.Episode,
-			&p.VoteScore, &p.CreatedAt, &p.UpdatedAt, &p.EditedAt, &locked,
+			&p.CreatorCat, &p.VoteScore, &p.CreatedAt, &p.UpdatedAt, &p.EditedAt, &locked,
 		)
 		if err != nil {
 			return nil, err
@@ -220,7 +222,8 @@ func buildPosts(ctx context.Context, d *shared.Deps, rows []postRow, viewerID in
 		item := Post{
 			ID: p.ID, Type: p.Type, Title: p.Title, Body: p.Body,
 			LinkURL: p.LinkURL, Spoiler: p.Spoiler, SpoilerNote: p.SpoilerNote,
-			Season: p.Season, Episode: p.Episode, VoteScore: p.VoteScore,
+			Season: p.Season, Episode: p.Episode, CreatorCategory: p.CreatorCat,
+			VoteScore: p.VoteScore,
 			CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, EditedAt: p.EditedAt,
 			Author: authors[p.AuthorID], Media: []Media{}, Anime: []Anime{}, Tags: []string{},
 		}

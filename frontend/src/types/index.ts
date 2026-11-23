@@ -137,6 +137,8 @@ export interface Post {
   my_vote: Vote
   comment_count: number
   bookmarked: boolean
+  /** R2: creator portfolio category; '' when the post is not creator-tagged. */
+  creator_category: string
   created_at: string
   updated_at: string
   edited_at: string | null
@@ -176,6 +178,99 @@ export interface Report {
   details: string | null
   status: string
   created_at: string
+}
+
+// ── Release 2 wire DTOs (snake_case — docs/conventions.md §R2) ──
+
+export type EventType =
+  | 'convention'
+  | 'meetup'
+  | 'screening'
+  | 'photoshoot'
+  | 'club'
+  | 'online'
+  | 'competition'
+  | 'other'
+
+export type RsvpStatus = 'going' | 'maybe'
+export type TeamUpStatus = 'open' | 'filled' | 'closed'
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected'
+export type CreatorCategory =
+  | 'cosplay'
+  | 'crossplay'
+  | 'fan_art'
+  | 'photography'
+  | 'edit'
+  | 'collection'
+  | 'other'
+
+export interface Event {
+  id: number
+  organizer: UserSummary
+  title: string
+  description: string
+  event_type: string
+  starts_at: string
+  ends_at: string
+  timezone: string
+  venue_text: string
+  city: string
+  country: string
+  is_online: boolean
+  capacity: number
+  rsvp_count: number
+  rsvp_status: string | null
+  cover_url: string | null
+  status: string
+  created_at: string
+}
+
+export interface EventUpdate {
+  id: number
+  event_id: number
+  author: UserSummary
+  body: string
+  created_at: string
+}
+
+export interface EventComment {
+  id: number
+  event_id: number
+  author: UserSummary
+  parent_id: number | null
+  body: string
+  created_at: string
+  deleted: boolean
+}
+
+export interface TeamUp {
+  id: number
+  owner: UserSummary
+  title: string
+  description: string
+  event: Event | null
+  categories: string[]
+  status: TeamUpStatus
+  applicant_count: number
+  my_application: string | null
+  created_at: string
+}
+
+export interface TeamUpApplication {
+  id: number
+  team_up_id: number
+  applicant: UserSummary
+  message: string
+  status: ApplicationStatus
+  created_at: string
+}
+
+export interface Creator {
+  user: UserSummary
+  categories: string[]
+  featured_posts: Post[]
+  post_count: number
+  follower_count: number
 }
 
 /** Cursor pagination contract. next_cursor is '' when there are no more pages. */
@@ -225,6 +320,8 @@ export interface CreateCommunityInput {
 export interface FeedParams {
   scope?: 'for-you' | 'following'
   community?: string
+  /** R2: additive filter, sent as the `creatorCategory` query parameter. */
+  creatorCategory?: string
   limit?: number
   cursor?: string
 }
@@ -251,6 +348,8 @@ export interface CreatePostInput {
   spoilerNote?: string
   season?: string
   episode?: number
+  /** R2: creator portfolio category, sent as `creator_category` in the body. */
+  creatorCategory?: string
 }
 
 export interface SearchParams extends PaginationParams {
@@ -279,6 +378,52 @@ export interface ReportInput {
 export interface ResolveReportInput {
   action: string
   reason: string
+}
+
+// ── Release 2 request inputs (camelCase client → snake_case wire in api/) ──
+
+export interface ListEventsParams extends PaginationParams {
+  q?: string
+  type?: EventType | string
+  from?: string
+  to?: string
+  city?: string
+  country?: string
+  online?: boolean
+}
+
+export interface CreateEventInput {
+  title: string
+  description: string
+  eventType: EventType | string
+  startsAt: string
+  endsAt: string
+  timezone: string
+  venueText: string
+  city: string
+  country: string
+  isOnline: boolean
+  capacity?: number
+  coverMediaId?: number
+}
+
+/** Team-up browsing currently exposes pagination only. */
+export type ListTeamUpsParams = PaginationParams & {
+  status?: string
+  category?: string
+  q?: string
+}
+
+export interface CreateTeamUpInput {
+  title: string
+  description: string
+  eventId?: number
+  categories: string[]
+}
+
+export interface ListCreatorsParams extends PaginationParams {
+  category?: CreatorCategory | string
+  q?: string
 }
 
 /** Query parameter values accepted by buildQuery. */

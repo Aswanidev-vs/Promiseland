@@ -41,6 +41,9 @@ func validatePatch(p postPatch) map[string]string {
 	if p.Season != nil && *p.Season < 0 || p.Episode != nil && *p.Episode < 0 {
 		details["episode"] = "Season and episode must not be negative."
 	}
+	if p.CreatorCategory != nil && !validCreatorCategory(*p.CreatorCategory) {
+		details["creatorCategory"] = "Choose a valid creator category."
+	}
 	if p.Poll != nil {
 		if len(p.Poll.Options) < 2 || len(p.Poll.Options) > 6 {
 			details["poll"] = "Polls need between 2 and 6 options."
@@ -130,6 +133,9 @@ func (h *handler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 	if p.Episode != nil {
 		add("episode", *p.Episode)
+	}
+	if p.CreatorCategory != nil {
+		add("creator_category", strings.ToLower(strings.TrimSpace(*p.CreatorCategory)))
 	}
 	if p.IsLocked != nil {
 		add("is_locked", boolInt(*p.IsLocked))

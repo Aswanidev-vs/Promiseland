@@ -19,6 +19,13 @@ import (
 
 const errValidation = "validation_error"
 
+// creatorCategories mirrors the R2 vocabulary so GET /feed can filter the
+// social feed by creator category without importing another domain module.
+var creatorCategories = map[string]bool{
+	"cosplay": true, "crossplay": true, "fan_art": true,
+	"photography": true, "edit": true, "collection": true, "other": true,
+}
+
 type module struct {
 	d      *shared.Deps
 	loader *shape.Loader
@@ -87,6 +94,20 @@ func (m *module) handleFeed(w http.ResponseWriter, r *http.Request) {
 
 	viewerID, _ := m.d.SessionUserID(r) // anonymous requests are supported
 	where, args := m.where(scope, viewerID, afterID)
+	rawCategory := q.Get("creatorCategory")
+	if strings.TrimSpace(rawCategory) == "" {
+		rawCategory = q.Get("creator_category")
+	}
+	if strings.TrimSpace(rawCategory) != "" {
+		category := strings.ToLower(strings.TrimSpace(rawCategory))
+		if !creatorCategories[category] || !m.schema.HasCol("posts", "creator_category") {
+			shared.WriteErrorDetails(w, http.StatusBadRequest, errValidation,
+				"Invalid creator category.", map[string]string{"creatorCategory": "Choose a valid creator category."})
+			return
+		}
+		where += " AND p.creator_category = ?"
+		args = append(args, category)
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()

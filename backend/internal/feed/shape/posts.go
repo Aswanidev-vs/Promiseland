@@ -21,6 +21,7 @@ type baseRow struct {
 	spoiler                                 bool
 	spoilerNote                             string
 	season, episode, voteScore              int
+	creatorCategory                         string
 	createdAt, updatedAt, editedAt          string
 	authorID                                int64
 	authorUsername, authorDisplayName       string
@@ -127,6 +128,7 @@ func (l *Loader) baseSelect(viewerID int64) (string, []any) {
 			%s AS created_at,
 			%s AS updated_at,
 			%s AS edited_at,
+			%s AS creator_category,
 			u.id AS author_id,
 			%s AS author_username,
 			%s AS author_display_name,
@@ -160,6 +162,7 @@ func (l *Loader) baseSelect(viewerID int64) (string, []any) {
 		s.NullableText("posts", "p", "created_at"),
 		updatedAt,
 		s.NullableText("posts", "p", "edited_at"),
+		s.NullableText("posts", "p", "creator_category"),
 		username,
 		displayName,
 		avatar,
@@ -223,6 +226,7 @@ func (l *Loader) Load(ctx context.Context, extraWhere string, extraArgs []any, v
 		err := rows.Scan(
 			&r.id, &r.pType, &r.title, &r.body, &r.linkURL, &r.spoiler,
 			&r.spoilerNote, &r.season, &r.episode, &r.voteScore, &r.createdAt, &r.updatedAt, &r.editedAt,
+			&r.creatorCategory,
 			&r.authorID, &r.authorUsername, &r.authorDisplayName, &r.authorAvatar,
 			&r.communityID, &r.cName, &r.cSlug, &r.cDescription, &r.cVisibility,
 			&r.cIcon, &r.cBanner, &r.cCreatedAt, &r.cMemberCount, &r.cPostCount,
@@ -241,6 +245,7 @@ func (l *Loader) Load(ctx context.Context, extraWhere string, extraArgs []any, v
 		p.SpoilerNote = r.spoilerNote
 		p.Season = r.season
 		p.Episode = r.episode
+		p.CreatorCategory = r.creatorCategory
 		p.VoteScore = r.voteScore
 		p.CreatedAt = r.createdAt
 		p.UpdatedAt = r.updatedAt

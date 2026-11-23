@@ -103,6 +103,55 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Moderation', requiresAuth: true },
   },
 
+  // Release 2 — events. Browsing is public; creating and RSVPing need a session.
+  {
+    path: '/events',
+    name: 'events',
+    component: () => import('@/views/EventsView.vue'),
+    meta: { title: 'Events' },
+  },
+  {
+    path: '/events/new',
+    name: 'create-event',
+    component: () => import('@/views/CreateEventView.vue'),
+    meta: { title: 'Create event', requiresAuth: true },
+  },
+  {
+    path: '/events/:id',
+    name: 'event',
+    component: () => import('@/views/EventView.vue'),
+    // Public view; the RSVP action itself checks auth inside the view.
+    meta: { title: 'Event', requiresAuth: false },
+  },
+
+  // Release 2 — creators (public directory).
+  {
+    path: '/creators',
+    name: 'creators',
+    component: () => import('@/views/CreatorsView.vue'),
+    meta: { title: 'Creators' },
+  },
+
+  // Release 2 — team-ups (signed-in only).
+  {
+    path: '/team-ups',
+    name: 'team-ups',
+    component: () => import('@/views/TeamUpsView.vue'),
+    meta: { title: 'Team ups', requiresAuth: true },
+  },
+  {
+    path: '/team-ups/new',
+    name: 'create-team-up',
+    component: () => import('@/views/CreateTeamUpView.vue'),
+    meta: { title: 'Create team up', requiresAuth: true },
+  },
+  {
+    path: '/team-ups/:id',
+    name: 'team-up',
+    component: () => import('@/views/TeamUpView.vue'),
+    meta: { title: 'Team up', requiresAuth: true },
+  },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',

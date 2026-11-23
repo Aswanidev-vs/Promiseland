@@ -11,6 +11,8 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/anime"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/auth"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/communities"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/creators"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/events"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/feed"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/media"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/moderation"
@@ -18,6 +20,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/posts"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/search"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/teamups"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/users"
 	"github.com/go-chi/chi/v5"
 )
@@ -62,6 +65,9 @@ func New(d *shared.Deps) http.Handler {
 		posts.Register(r, d)
 		feed.Register(r, d)
 		search.Register(r, d)
+		events.Register(r, d)
+		creators.Register(r, d)
+		teamups.Register(r, d)
 
 		// Authenticated routes. With() shares chi's route tree, so these
 		// cannot shadow public routes; auth is also enforced in handlers.
@@ -73,9 +79,10 @@ func New(d *shared.Deps) http.Handler {
 		media.RegisterProtected(protected, d)
 		notifications.RegisterProtected(protected, d)
 		moderation.RegisterProtected(protected, d)
+		events.RegisterProtected(protected, d)
+		creators.RegisterProtected(protected, d)
+		teamups.RegisterProtected(protected, d)
 
-		// [R2] events.Register(r, d)
-		// [R2] teamups.Register(r, d)
 		// [R3] chat.Register(r, d)
 		// [R4] discovery.Register(r, d)
 		// [R5] adult.Register(r, d) // gated by FEATURE_ADULT_DATING

@@ -12,21 +12,37 @@ interface NavItem {
   to?: string
 }
 
+interface NavSection {
+  label?: string
+  items: NavItem[]
+}
+
 const auth = useAuthStore()
 
 const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
 
-// Events, Chat and Discover stay marked "Soon" until R2–R4.
-const items = computed<NavItem[]>(() => [
-  { label: 'Home', icon: 'home', to: '/home' },
-  { label: 'Communities', icon: 'communities', to: '/communities' },
-  { label: 'Events', icon: 'events' },
-  { label: 'Chat', icon: 'chat' },
-  { label: 'Discover', icon: 'discover' },
-  { label: 'Notifications', icon: 'bell', to: '/notifications' },
-  { label: 'Profile', icon: 'profile', to: profileTo.value },
+// Events is live in R2. Chat and Discover stay marked "Soon" until R3/R4.
+const sections = computed<NavSection[]>(() => [
+  {
+    items: [
+      { label: 'Home', icon: 'home', to: '/home' },
+      { label: 'Communities', icon: 'communities', to: '/communities' },
+      { label: 'Events', icon: 'events', to: '/events' },
+      { label: 'Chat', icon: 'chat' },
+      { label: 'Discover', icon: 'discover' },
+      { label: 'Notifications', icon: 'bell', to: '/notifications' },
+      { label: 'Profile', icon: 'profile', to: profileTo.value },
+    ],
+  },
+  {
+    label: 'Connect',
+    items: [
+      { label: 'Creators', icon: 'creative', to: '/creators' },
+      { label: 'Team ups', icon: 'communities', to: '/team-ups' },
+    ],
+  },
 ])
 </script>
 
@@ -38,30 +54,33 @@ const items = computed<NavItem[]>(() => [
     </RouterLink>
 
     <nav aria-label="Main">
-      <ul class="sidebar__nav">
-        <li v-for="item in items" :key="item.label">
-          <RouterLink
-            v-if="item.to"
-            :to="item.to"
-            class="sidebar__item"
-            active-class="sidebar__item--active"
-          >
-            <AppIcon :name="item.icon" :size="20" />
-            <span class="sidebar__label">{{ item.label }}</span>
-          </RouterLink>
-          <span
-            v-else
-            class="sidebar__item sidebar__item--soon"
-            aria-disabled="true"
-            :title="`${item.label} arrives in a later release`"
-            :aria-label="`${item.label}, arriving in a later release`"
-          >
-            <AppIcon :name="item.icon" :size="20" />
-            <span class="sidebar__label">{{ item.label }}</span>
-            <span class="sidebar__soon" aria-hidden="true">Soon</span>
-          </span>
-        </li>
-      </ul>
+      <div v-for="(section, index) in sections" :key="index" class="sidebar__section">
+        <p v-if="section.label" class="sidebar__section-label">{{ section.label }}</p>
+        <ul class="sidebar__nav">
+          <li v-for="item in section.items" :key="item.label">
+            <RouterLink
+              v-if="item.to"
+              :to="item.to"
+              class="sidebar__item"
+              active-class="sidebar__item--active"
+            >
+              <AppIcon :name="item.icon" :size="20" />
+              <span class="sidebar__label">{{ item.label }}</span>
+            </RouterLink>
+            <span
+              v-else
+              class="sidebar__item sidebar__item--soon"
+              aria-disabled="true"
+              :title="`${item.label} arrives in a later release`"
+              :aria-label="`${item.label}, arriving in a later release`"
+            >
+              <AppIcon :name="item.icon" :size="20" />
+              <span class="sidebar__label">{{ item.label }}</span>
+              <span class="sidebar__soon" aria-hidden="true">Soon</span>
+            </span>
+          </li>
+        </ul>
+      </div>
     </nav>
 
     <p class="sidebar__note">
@@ -97,6 +116,19 @@ const items = computed<NavItem[]>(() => [
   font-size: var(--text-lg);
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+.sidebar__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sidebar__section-label {
+  margin: 0;
+  padding-inline: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
 }
 
 .sidebar__nav {
@@ -175,8 +207,13 @@ a.sidebar__item:hover {
   .sidebar__wordmark,
   .sidebar__label,
   .sidebar__soon,
+  .sidebar__section-label,
   .sidebar__note {
     display: none;
+  }
+
+  .sidebar__section {
+    gap: var(--space-1);
   }
 
   .sidebar__item {

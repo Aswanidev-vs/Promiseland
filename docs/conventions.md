@@ -120,6 +120,45 @@ Voting model: one consistent upvote/downvote per user per post (`my_vote` -1/0/1
 
 `/home` HomeView · `/communities` CommunitiesView · `/communities/:slug` CommunityView · `/posts/new` CreatePostView · `/posts/:id` PostView · `/u/:username` ProfileView · `/search` SearchView · `/notifications` NotificationsView · `/settings` SettingsView · `/onboarding` OnboardingView · `/verify-email` VerifyEmailView · `/reset-password` ResetPasswordView · `/moderation` ModerationView. All authenticated except `/verify-email`, `/reset-password`, `/login`, `/register`.
 
+## Release 2 cross-agent contract (R2)
+
+### Migrations
+
+- R2 backend owns `011`–`015` (only 011–014 needed): events, RSVPs/updates/comments, creator categories + featured posts, team-ups.
+
+### Backend JSON shapes
+
+- `Event`: `{id, organizer:UserSummary, title, description, event_type:string, starts_at:string, ends_at:string, timezone:string, venue_text, city, country, is_online:boolean, capacity:int, rsvp_count:int, rsvp_status:string|null, cover_url:string|null, status:string, created_at}`
+- `EventUpdate`: `{id,event_id,author:UserSummary,body,created_at}`
+- `EventComment`: `{id,event_id,author:UserSummary,parent_id:int64|null,body,created_at,deleted:boolean}`
+- `TeamUp`: `{id,owner:UserSummary,title,description,event:Event|null,categories:string[],status:'open'|'filled'|'closed',applicant_count:int,my_application:string|null,created_at}`
+- `TeamUpApplication`: `{id,team_up_id,applicant:UserSummary,message,status:'pending'|'accepted'|'rejected',created_at}`
+- `Creator`: `{user:UserSummary, categories:string[], featured_posts:Post[], post_count:int, follower_count:int}`
+- `Post` gains `creator_category: string` (one of `cosplay|crossplay|fan_art|photography|edit|collection|other|''`).
+
+Event types: `convention|meetup|screening|photoshoot|club|online|competition|other`.
+
+### Endpoints (R2)
+
+- `GET/POST /events`, `GET/PATCH/DELETE /events/{id}`, `POST/DELETE /events/{id}/rsvp` (body `{status:'going'|'maybe'}`), `GET/POST /events/{id}/updates`, `GET/POST /events/{id}/comments`.
+- `GET /events` filters: `q,type,from,to,city,country,online,limit,cursor`.
+- `GET/POST /team-ups`, `GET/PATCH/DELETE /team-ups/{id}`, `POST /team-ups/{id}/apply` `{message}`, `PATCH /team-ups/{id}/applications/{applicationId}` `{status}`.
+- `GET /creators?category=&q=&limit=&cursor=` → `Page<Creator>`.
+- `POST/DELETE /users/me/featured/{postId}` → toggles a featured post (max 6).
+- `GET /posts?creatorCategory=` filters existing feed by creator category (existing endpoint, additive query param).
+
+### R2 frontend API exports (F1 writes, F2 imports)
+
+`events.ts`: `listEvents(p:{q?,type?,from?,to?,city?,country?,online?,limit?,cursor?}): Promise<Page<Event>>`, `getEvent(id:number): Promise<Event>`, `createEvent(i:{title,description,eventType,startsAt,endsAt,timezone,venueText,city,country,isOnline,capacity?,coverMediaId?}): Promise<Event>`, `updateEvent(id:number,patch:Partial<Event>): Promise<Event>`, `deleteEvent(id:number): Promise<void>`, `rsvpEvent(id:number,status:'going'|'maybe'): Promise<Event>`, `cancelRsvp(id:number): Promise<Event>`, `listEventUpdates(id:number): Promise<EventUpdate[]>`, `addEventUpdate(id:number,body:string): Promise<EventUpdate>`, `listEventComments(id:number,p?): Promise<Page<EventComment>>`, `addEventComment(id:number,body:string,parentId?:number): Promise<EventComment>`.
+
+`teamups.ts`: `listTeamUps(p?): Promise<Page<TeamUp>>`, `getTeamUp(id:number): Promise<TeamUp>`, `createTeamUp(i:{title,description,eventId?,categories:string[]}): Promise<TeamUp>`, `updateTeamUp(id:number,patch:Partial<TeamUp>): Promise<TeamUp>`, `deleteTeamUp(id:number): Promise<void>`, `applyToTeamUp(id:number,message:string): Promise<TeamUpApplication>`, `listApplications(id:number): Promise<TeamUpApplication[]>`, `reviewApplication(id:number,applicationId:number,status:'accepted'|'rejected'): Promise<TeamUpApplication>`.
+
+`creators.ts`: `listCreators(p:{category?,q?,limit?,cursor?}): Promise<Page<Creator>>`, `getCreator(username:string): Promise<Creator>`, `featurePost(postId:number): Promise<void>`, `unfeaturePost(postId:number): Promise<void>`.
+
+### R2 routes (F1 adds; F2 creates views)
+
+`/events` EventsView · `/events/new` CreateEventView · `/events/:id` EventView · `/creators` CreatorsView · `/team-ups` TeamUpsView · `/team-ups/new` CreateTeamUpView · `/team-ups/:id` TeamUpView. All require auth except browsing `/events` and `/creators` (public).
+
 ## Git
 
 One commit per release phase. Do not commit until the orchestrator (main agent) verifies and stages.

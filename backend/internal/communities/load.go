@@ -184,27 +184,28 @@ func loadAnime(ctx context.Context, d *shared.Deps, ids []int64) map[int64]Anime
 }
 
 type postRow struct {
-	ID          int64
-	AuthorID    int64
-	CommunityID sql.NullInt64
-	Type        string
-	Title       string
-	Body        string
-	LinkURL     string
-	Spoiler     bool
-	SpoilerNote string
-	Season      int
-	Episode     int
-	VoteScore   int
-	CreatedAt   string
-	UpdatedAt   string
-	EditedAt    string
+	ID              int64
+	AuthorID        int64
+	CommunityID     sql.NullInt64
+	Type            string
+	Title           string
+	Body            string
+	LinkURL         string
+	CreatorCategory string
+	Spoiler         bool
+	SpoilerNote     string
+	Season          int
+	Episode         int
+	VoteScore       int
+	CreatedAt       string
+	UpdatedAt       string
+	EditedAt        string
 }
 
 const postSelect = `
 SELECT p.id, p.author_id, p.community_id, p.type, p.title, p.body,
        COALESCE(p.link_url, ''), p.spoiler, COALESCE(p.spoiler_note, ''),
-       COALESCE(p.season, 0), COALESCE(p.episode, 0), p.vote_score,
+       COALESCE(p.creator_category, ''), COALESCE(p.season, 0), COALESCE(p.episode, 0), p.vote_score,
        p.created_at, COALESCE(p.updated_at, p.created_at), COALESCE(p.edited_at, ''),
        COALESCE(p.is_locked, 0)
 FROM posts p`
@@ -216,7 +217,7 @@ func scanPostRows(rows *sql.Rows) ([]postRow, error) {
 		var spoiler, locked int
 		err := rows.Scan(
 			&p.ID, &p.AuthorID, &p.CommunityID, &p.Type, &p.Title, &p.Body,
-			&p.LinkURL, &spoiler, &p.SpoilerNote, &p.Season, &p.Episode,
+			&p.LinkURL, &spoiler, &p.SpoilerNote, &p.CreatorCategory, &p.Season, &p.Episode,
 			&p.VoteScore, &p.CreatedAt, &p.UpdatedAt, &p.EditedAt, &locked,
 		)
 		if err != nil {
@@ -240,7 +241,7 @@ func buildPosts(ctx context.Context, d *shared.Deps, rows []postRow, viewerID in
 	for _, p := range rows {
 		item := Post{
 			ID: p.ID, Type: p.Type, Title: p.Title, Body: p.Body,
-			LinkURL: p.LinkURL, Spoiler: p.Spoiler, SpoilerNote: p.SpoilerNote,
+			LinkURL: p.LinkURL, CreatorCategory: p.CreatorCategory, Spoiler: p.Spoiler, SpoilerNote: p.SpoilerNote,
 			Season: p.Season, Episode: p.Episode, VoteScore: p.VoteScore,
 			CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, EditedAt: p.EditedAt,
 			Author: authors[p.AuthorID], Media: []Media{}, Anime: []Anime{}, Tags: []string{},

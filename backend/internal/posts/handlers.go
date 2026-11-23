@@ -98,35 +98,73 @@ type pollInput struct {
 }
 
 type postInput struct {
-	CommunitySlug string     `json:"communitySlug"`
-	Type          string     `json:"type"`
-	Title         string     `json:"title"`
-	Body          string     `json:"body"`
-	LinkURL       string     `json:"linkUrl"`
-	MediaIDs      []int64    `json:"mediaIds"`
-	AnimeIDs      []int64    `json:"animeIds"`
-	Tags          []string   `json:"tags"`
-	Spoiler       bool       `json:"spoiler"`
-	SpoilerNote   string     `json:"spoilerNote"`
-	Season        int        `json:"season"`
-	Episode       int        `json:"episode"`
-	Poll          *pollInput `json:"poll"`
+	CommunitySlug   string     `json:"communitySlug"`
+	Type            string     `json:"type"`
+	Title           string     `json:"title"`
+	Body            string     `json:"body"`
+	LinkURL         string     `json:"linkUrl"`
+	MediaIDs        []int64    `json:"mediaIds"`
+	AnimeIDs        []int64    `json:"animeIds"`
+	Tags            []string   `json:"tags"`
+	Spoiler         bool       `json:"spoiler"`
+	SpoilerNote     string     `json:"spoilerNote"`
+	Season          int        `json:"season"`
+	Episode         int        `json:"episode"`
+	CreatorCategory string     `json:"creatorCategory"`
+	Poll            *pollInput `json:"poll"`
 }
 
 type postPatch struct {
-	Type        *string    `json:"type"`
-	Title       *string    `json:"title"`
-	Body        *string    `json:"body"`
-	LinkURL     *string    `json:"linkUrl"`
-	MediaIDs    *[]int64   `json:"mediaIds"`
-	AnimeIDs    *[]int64   `json:"animeIds"`
-	Tags        *[]string  `json:"tags"`
-	Spoiler     *bool      `json:"spoiler"`
-	SpoilerNote *string    `json:"spoilerNote"`
-	Season      *int       `json:"season"`
-	Episode     *int       `json:"episode"`
-	IsLocked    *bool      `json:"isLocked"`
-	Poll        *pollInput `json:"poll"`
+	Type            *string    `json:"type"`
+	Title           *string    `json:"title"`
+	Body            *string    `json:"body"`
+	LinkURL         *string    `json:"linkUrl"`
+	MediaIDs        *[]int64   `json:"mediaIds"`
+	AnimeIDs        *[]int64   `json:"animeIds"`
+	Tags            *[]string  `json:"tags"`
+	Spoiler         *bool      `json:"spoiler"`
+	SpoilerNote     *string    `json:"spoilerNote"`
+	Season          *int       `json:"season"`
+	Episode         *int       `json:"episode"`
+	CreatorCategory *string    `json:"creatorCategory"`
+	IsLocked        *bool      `json:"isLocked"`
+	Poll            *pollInput `json:"poll"`
+}
+
+// UnmarshalJSON accepts both the canonical camelCase body key and the
+// snake_case alias used by the R2 frontend client. camelCase wins when both
+// are supplied; the Post wire field remains creator_category.
+func (p *postInput) UnmarshalJSON(b []byte) error {
+	type plain postInput
+	var raw struct {
+		plain
+		CreatorCategorySnake string `json:"creator_category"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*p = postInput(raw.plain)
+	if p.CreatorCategory == "" {
+		p.CreatorCategory = raw.CreatorCategorySnake
+	}
+	return nil
+}
+
+// UnmarshalJSON is the patch-side equivalent of postInput.UnmarshalJSON.
+func (p *postPatch) UnmarshalJSON(b []byte) error {
+	type plain postPatch
+	var raw struct {
+		plain
+		CreatorCategorySnake *string `json:"creator_category"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*p = postPatch(raw.plain)
+	if p.CreatorCategory == nil {
+		p.CreatorCategory = raw.CreatorCategorySnake
+	}
+	return nil
 }
 
 func dedupeIDs(ids []int64) []int64 {
@@ -187,6 +225,11 @@ func validatePostContent(in postInput) map[string]string {
 	}
 	if in.Season < 0 || in.Episode < 0 {
 		details["episode"] = "Season and episode must not be negative."
+	}
+	if !validCreatorCategory(in.CreatorCategory) {
+		details["creatorCategory"] = "Choose a valid creator category."
+	} else {
+		in.CreatorCategory = strings.ToLower(strings.TrimSpace(in.CreatorCategory))
 	}
 	if in.Type == "poll" {
 		if in.Poll == nil || len(in.Poll.Options) < 2 || len(in.Poll.Options) > 6 {
@@ -304,11 +347,11 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := tx.Exec(`
 		INSERT INTO posts(author_id, community_id, type, title, body, link_url, spoiler,
-		                  spoiler_note, poll_question, season, episode, vote_score,
-		                  is_locked, deleted_at, created_at, updated_at, edited_at)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,0,0,NULL,datetime('now'),datetime('now'),NULL)`,
+		                  spoiler_note, poll_question, season, episode, creator_category,
+		                  vote_score, is_locked, deleted_at, created_at, updated_at, edited_at)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,NULL,datetime('now'),datetime('now'),NULL)`,
 		userID, communityID, in.Type, in.Title, in.Body, in.LinkURL,
-		boolInt(in.Spoiler), in.SpoilerNote, nullableString(question), in.Season, in.Episode)
+		boolInt(in.Spoiler), in.SpoilerNote, nullableString(question), in.Season, in.Episode, in.CreatorCategory)
 	if err != nil {
 		shared.WriteError(w, http.StatusInternalServerError, shared.CodeInternalError, "Could not publish the post.")
 		return
@@ -446,6 +489,23 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 		}
 		query += ` AND p.community_id = ?`
 		args = append(args, communityID)
+	}
+	creatorCategory := r.URL.Query().Get("creatorCategory")
+	if creatorCategory == "" {
+		creatorCategory = r.URL.Query().Get("creator_category")
+	}
+	if creatorCategory != "" {
+		category := strings.ToLower(strings.TrimSpace(creatorCategory))
+		if !validCreatorCategory(category) {
+			writeValidation(w, map[string]string{"creatorCategory": "Choose a valid creator category."})
+			return
+		}
+		if category == "" {
+			query += ` AND COALESCE(p.creator_category, '') = ''`
+		} else {
+			query += ` AND p.creator_category = ?`
+			args = append(args, category)
+		}
 	}
 	clause, blockArgs := blockClause(h.d, viewer)
 	query += clause + ` ORDER BY p.id DESC LIMIT ?`

@@ -80,28 +80,29 @@ type Poll struct {
 }
 
 type Post struct {
-	ID           int64       `json:"id"`
-	Author       UserSummary `json:"author"`
-	Community    *Community  `json:"community"`
-	Type         string      `json:"type"`
-	Title        string      `json:"title"`
-	Body         string      `json:"body"`
-	LinkURL      string      `json:"link_url"`
-	Media        []Media     `json:"media"`
-	Anime        []Anime     `json:"anime"`
-	Tags         []string    `json:"tags"`
-	Spoiler      bool        `json:"spoiler"`
-	SpoilerNote  string      `json:"spoiler_note"`
-	Season       int         `json:"season"`
-	Episode      int         `json:"episode"`
-	VoteScore    int         `json:"vote_score"`
-	MyVote       int         `json:"my_vote"`
-	CommentCount int         `json:"comment_count"`
-	Bookmarked   bool        `json:"bookmarked"`
-	CreatedAt    string      `json:"created_at"`
-	UpdatedAt    string      `json:"updated_at"`
-	EditedAt     string      `json:"edited_at"`
-	Poll         *Poll       `json:"poll,omitempty"`
+	ID              int64       `json:"id"`
+	Author          UserSummary `json:"author"`
+	Community       *Community  `json:"community"`
+	Type            string      `json:"type"`
+	Title           string      `json:"title"`
+	Body            string      `json:"body"`
+	LinkURL         string      `json:"link_url"`
+	CreatorCategory string      `json:"creator_category"`
+	Media           []Media     `json:"media"`
+	Anime           []Anime     `json:"anime"`
+	Tags            []string    `json:"tags"`
+	Spoiler         bool        `json:"spoiler"`
+	SpoilerNote     string      `json:"spoiler_note"`
+	Season          int         `json:"season"`
+	Episode         int         `json:"episode"`
+	VoteScore       int         `json:"vote_score"`
+	MyVote          int         `json:"my_vote"`
+	CommentCount    int         `json:"comment_count"`
+	Bookmarked      bool        `json:"bookmarked"`
+	CreatedAt       string      `json:"created_at"`
+	UpdatedAt       string      `json:"updated_at"`
+	EditedAt        string      `json:"edited_at"`
+	Poll            *Poll       `json:"poll,omitempty"`
 }
 
 // page serialisation always includes next_cursor (empty string when done).
