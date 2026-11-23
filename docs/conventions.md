@@ -202,6 +202,29 @@ Plus `src/composables/useChatSocket.ts` exposing `connect()`, `disconnect()`, re
 ### R3 routes (F1 adds; F2 creates views)
 `/chat` ChatHomeView (auth) · `/chat/servers/:id` ChatServerView (auth) · `/chat/conversations/:id` ChatConversationView (auth). All require auth.
 
+## Release 4 cross-agent contract (R4)
+
+### Migrations
+R4 owns `019_connections.sql`, `020_discovery.sql`.
+
+### JSON shapes
+- `DiscoveryCandidate`: `{user:UserProfile, shared:{anime:string[], genres:string[], interests:string[], communities:string[]}, shared_count:int, explanation:string, connection_status:'none'|'pending_in'|'pending_out'|'accepted'}`
+- `Connection`: `{id, requester:UserSummary, addressee:UserSummary, message, status:'pending'|'accepted'|'rejected'|'ignored', created_at, updated_at}`
+- `DiscoverySettings`: `{discoverable:boolean}`
+
+Explanations are plain, understandable sentences (e.g. "You both follow 8 of the same anime and 3 of the same communities"). Never a scientific-looking score or compatibility percentage.
+
+### Endpoints
+`GET /discovery/friends?limit=&cursor=` → `Page<DiscoveryCandidate>` · `GET/PATCH /discovery/settings` (body `{discoverable:boolean}`) · `POST /discovery/{userId}/suppress` (hide a suggestion) · `POST /connections` `{userId,message?}` → `Connection` · `GET /connections?status=&direction=incoming|outgoing|all` → `Page<Connection>` · `PATCH /connections/{id}` `{status:'accepted'|'rejected'|'ignored'}` → `Connection` · `DELETE /connections/{id}`.
+
+Rules: mutual blocks exclude candidates; private profiles and `discoverable=false` users are excluded; one pending connection per unordered pair; accepting creates a notification; suppression is reversible via `DELETE /discovery/{userId}/suppress`. Scoring is deterministic overlap counting across `user_anime_interests`, `user_interests`, `community_memberships`, and creator categories from `posts`. No ML and no location exposure.
+
+### R4 frontend API exports (F1 writes, F2 imports)
+`discovery.ts`: `listFriends(p:{limit?,cursor?}): Promise<Page<DiscoveryCandidate>>`, `getDiscoverySettings(): Promise<DiscoverySettings>`, `updateDiscoverySettings(patch:{discoverable:boolean}): Promise<DiscoverySettings>`, `suppressCandidate(userId:number): Promise<void>`, `unsuppressCandidate(userId:number): Promise<void>`, `sendConnection(i:{userId:number,message?:string}): Promise<Connection>`, `listConnections(p:{status?,direction?,limit?,cursor?}): Promise<Page<Connection>>`, `reviewConnection(id:number,status:'accepted'|'rejected'|'ignored'): Promise<Connection>`, `deleteConnection(id:number): Promise<void>`.
+
+### R4 routes (F1 adds; F2 creates views)
+`/discover` DiscoverView (auth) · `/connections` ConnectionsView (auth). Activate the Discover nav item; Chat is now active too.
+
 ## Git
 
 One commit per release phase. Do not commit until the orchestrator (main agent) verifies and stages.

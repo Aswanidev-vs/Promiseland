@@ -543,3 +543,60 @@ export interface ReportMessageInput {
   reason: string
   details?: string
 }
+
+// ── Release 4 wire DTOs (snake_case — docs/conventions.md §R4) ──
+
+/** The overlap that explains why a candidate was surfaced. No compatibility score. */
+export interface SharedInterests {
+  anime: string[]
+  genres: string[]
+  interests: string[]
+  communities: string[]
+}
+
+export type ConnectionStatus = 'pending' | 'accepted' | 'rejected' | 'ignored'
+/** Statuses a user may set when reviewing an incoming request. */
+export type ConnectionReviewStatus = Exclude<ConnectionStatus, 'pending'>
+export type ConnectionDirection = 'incoming' | 'outgoing' | 'all'
+/** Status stamped on a discovery candidate relative to the current user. */
+export type CandidateConnectionStatus = 'none' | 'pending_in' | 'pending_out' | 'accepted'
+
+export interface DiscoveryCandidate {
+  user: UserProfile
+  shared: SharedInterests
+  shared_count: number
+  explanation: string
+  connection_status: CandidateConnectionStatus
+}
+
+export interface Connection {
+  id: number
+  requester: UserSummary
+  addressee: UserSummary
+  message: string
+  status: ConnectionStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface DiscoverySettings {
+  discoverable: boolean
+}
+
+// ── Release 4 request inputs (camelCase client → snake_case wire in api/) ──
+
+export type ListFriendsParams = PaginationParams
+
+export interface UpdateDiscoverySettingsInput {
+  discoverable: boolean
+}
+
+export interface SendConnectionInput {
+  userId: number
+  message?: string
+}
+
+export interface ListConnectionsParams extends PaginationParams {
+  status?: ConnectionStatus
+  direction?: ConnectionDirection
+}

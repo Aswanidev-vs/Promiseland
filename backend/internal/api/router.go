@@ -13,6 +13,7 @@ import (
 	"github.com/Aswanidev-vs/promiseland/backend/internal/chat"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/communities"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/creators"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/discovery"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/events"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/feed"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/media"
@@ -91,8 +92,8 @@ func New(d *shared.Deps) http.Handler {
 		creators.RegisterProtected(protected, d)
 		teamups.RegisterProtected(protected, d)
 		chat.RegisterProtected(protected, d)
+		discovery.RegisterProtected(protected, d)
 
-		// [R4] discovery.Register(r, d)
 		// [R5] adult.Register(r, d) // gated by FEATURE_ADULT_DATING
 
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {

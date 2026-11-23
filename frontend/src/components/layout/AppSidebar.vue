@@ -23,7 +23,7 @@ const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
 
-// Events and Chat are live. Discover stays marked "Soon" until R4.
+// Events, Chat and Discover are live. Every primary item is linked.
 const sections = computed<NavSection[]>(() => [
   {
     items: [
@@ -31,7 +31,7 @@ const sections = computed<NavSection[]>(() => [
       { label: 'Communities', icon: 'communities', to: '/communities' },
       { label: 'Events', icon: 'events', to: '/events' },
       { label: 'Chat', icon: 'chat', to: '/chat' },
-      { label: 'Discover', icon: 'discover' },
+      { label: 'Discover', icon: 'discover', to: '/discover' },
       { label: 'Notifications', icon: 'bell', to: '/notifications' },
       { label: 'Profile', icon: 'profile', to: profileTo.value },
     ],

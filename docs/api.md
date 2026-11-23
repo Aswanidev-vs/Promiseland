@@ -33,10 +33,10 @@ Typical statuses: `400` validation, `401` unauthenticated, `403` forbidden / own
 | **Implemented (R1)** | Social foundation / first beta |
 | **Implemented (R2)** | Creator and events |
 | **Implemented (R3)** | Community communication (chat) |
-| **Planned (R4)** | Interest-based discovery |
+| **Implemented (R4)** | Interest-based discovery |
 | **Planned (R5)** | Optional, adults-only, feature-gated |
 
-R1–R3 endpoints are implemented; R4–R5 remain planned. See `docs/conventions.md` for the authoritative request/response contracts.
+R1–R4 endpoints are implemented; R5 remains a feature-gated scaffold pending age assurance and legal review. See `docs/conventions.md` for the authoritative request/response contracts.
 
 ## Health (R0 — foundation)
 
@@ -216,7 +216,7 @@ Illustrative shape: `{ "id", "creator_id", "type", "description", "event_or_anim
 
 Illustrative shape: `{ "id", "channel_id", "author_id", "body", "created_at" }`. Messages are persisted before/as part of delivery; reconnecting clients request messages after the last received ID. WebSocket connections enforce the same authorization as REST (PRD §7.12). The edge proxy already forwards `/ws/`.
 
-## Discovery (Planned R4)
+## Discovery (Implemented R4)
 
 | Method | Path | Purpose |
 |---|---|---|

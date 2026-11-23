@@ -8,8 +8,8 @@ import type { IconName } from '@/components/ui/icons'
 interface Tab {
   label: string
   icon: IconName
-  to?: string
-  /** Icon-only tab, used to fit Chat into the five-tab bar without overflow. */
+  to: string
+  /** Icon-only tab, used to fit Chat and Discover into the tab bar without overflow. */
   compact?: boolean
 }
 
@@ -23,6 +23,7 @@ const tabs = computed<Tab[]>(() => [
   { label: 'Home', icon: 'home', to: '/home' },
   { label: 'Communities', icon: 'communities', to: '/communities' },
   { label: 'Chat', icon: 'chat', to: '/chat', compact: true },
+  { label: 'Discover', icon: 'discover', to: '/discover', compact: true },
   { label: 'Events', icon: 'events', to: '/events' },
   { label: 'Notifications', icon: 'bell', to: '/notifications' },
   { label: 'Profile', icon: 'profile', to: profileTo.value },
@@ -34,27 +35,16 @@ const tabs = computed<Tab[]>(() => [
     <ul class="mobile-nav__list">
       <li v-for="tab in tabs" :key="tab.label" class="mobile-nav__item">
         <RouterLink
-          v-if="tab.to"
           :to="tab.to"
           class="mobile-nav__tab"
           :class="{ 'mobile-nav__tab--compact': tab.compact }"
           active-class="mobile-nav__tab--active"
-          :aria-label="tab.compact ? tab.label : undefined"
+          :aria-label="tab.label"
           :title="tab.compact ? tab.label : undefined"
         >
           <AppIcon :name="tab.icon" :size="22" />
           <span>{{ tab.label }}</span>
         </RouterLink>
-        <span
-          v-else
-          class="mobile-nav__tab mobile-nav__tab--soon"
-          aria-disabled="true"
-          :title="`${tab.label} arrives in a later release`"
-          :aria-label="`${tab.label}, arriving in a later release`"
-        >
-          <AppIcon :name="tab.icon" :size="22" />
-          <span>{{ tab.label }}</span>
-        </span>
       </li>
     </ul>
   </nav>
@@ -74,7 +64,8 @@ const tabs = computed<Tab[]>(() => [
 
 .mobile-nav__list {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  /* Seven equal cells: 375px / 7 ≈ 53px, still above the 44px touch floor. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   height: 100%;
 }
 
@@ -115,10 +106,5 @@ a.mobile-nav__tab:hover {
 
 .mobile-nav__tab--active {
   color: var(--ember);
-}
-
-.mobile-nav__tab--soon {
-  cursor: default;
-  opacity: 0.65;
 }
 </style>

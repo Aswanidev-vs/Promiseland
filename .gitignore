@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 
+
 # Generated build output (never committed; images rebuild it)
 dist/
 
@@ -38,3 +39,4 @@ backend/coverage/
 *.swp
 *.swo
 .DS_Store
+.mimocode/

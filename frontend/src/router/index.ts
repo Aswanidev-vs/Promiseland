@@ -172,6 +172,20 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Conversation', requiresAuth: true },
   },
 
+  // Release 4 — interest discovery and connections (signed-in only).
+  {
+    path: '/discover',
+    name: 'discover',
+    component: () => import('@/views/DiscoverView.vue'),
+    meta: { title: 'Discover', requiresAuth: true },
+  },
+  {
+    path: '/connections',
+    name: 'connections',
+    component: () => import('@/views/ConnectionsView.vue'),
+    meta: { title: 'Connections', requiresAuth: true },
+  },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
