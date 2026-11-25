@@ -32,4 +32,4 @@ One EC2 instance runs Docker Compose with `api`, `web` and the optional edge `pr
 
 ## CI/CD status
 
-The current workflow (`.github/workflows/ci.yml`) runs checks only. Image build/scan/publish to ECR, scripted EC2 deployment, post-deploy health checks and rollback automation are **deferred** per PRD §11.3 and should be added before relying on this topology for a public launch.
+The current workflow (`.github/workflows/ci.yml`) covers PRD §11.3 items 1-5: formatting, vet, `go test -race`, `govulncheck`, the frontend build and tests, `bun audit`, both images built and Trivy-scanned, and a smoke test that starts the stack and waits for `/healthz`. Publish to ECR, scripted EC2 deployment, post-deploy health checks and rollback automation are **deferred** per PRD §11.3 items 6-9 and should be added before relying on this topology for a public launch.

@@ -64,7 +64,8 @@ reading any of it as finished.
 | R5 — Optional adult dating | Gated scaffold only | **Disabled and not launch-ready.** Off by `FEATURE_ADULT_DATING=false` and `ADULT_AGE_ASSURANCE=none` (deny-all). Eligibility, legal review and safety policy are outstanding — read `docs/adult-safety.md` before touching it |
 
 Production deployment, backup/restore validation and image publishing have **not** been exercised
-yet. CI runs checks only; it has no deploy job.
+yet. CI builds and scans both container images and smoke-tests the running stack, but it has no
+publish or deploy job (PRD §11.3 items 6-9 need a registry and an OIDC deploy role).
 
 ## What you can use today
 
@@ -111,13 +112,13 @@ sign-in, and the navigation shows only public destinations.
 | Frontend | Vue 3.5, TypeScript, Vite 6, Vue Router 4, Pinia, plain CSS with design tokens |
 | Frontend runtime and package manager | **Bun** (1.4.x) — no npm or node |
 | Fonts | Self-hosted via `@fontsource-variable`: Plus Jakarta Sans (display and body), JetBrains Mono (figures, coordinates) |
-| Backend | Go 1.27, `net/http` + chi 5, modular monolith |
+| Backend | Go 1.27.4, `net/http` + chi 5, modular monolith |
 | Realtime | `gorilla/websocket` hub with per-scope subscriptions and presence |
 | Database | SQLite through the pure-Go `modernc.org/sqlite` driver; WAL, one writer, migrations embedded in the binary |
 | Auth | Cookie sessions (HttpOnly, SameSite=Lax), bcrypt passwords, SHA-256-hashed session and email tokens |
 | Containers | Multi-stage Dockerfiles (non-root), Docker Compose, optional edge nginx profile |
 | Target hosting | AWS EC2 + EBS, ECR, S3, IAM, CloudWatch (single instance first) |
-| CI | GitHub Actions: gofmt, `go test`, `go vet`, `go build`, bun install/build/test, `docker compose config` |
+| CI | GitHub Actions: gofmt, `go vet`, `go test -race`, `go build`, `govulncheck`, bun build/test, `bun audit`, both images built and Trivy-scanned, stack smoke test, `docker compose config` |
 
 ## Architecture
 
@@ -156,7 +157,7 @@ docs/                  architecture, API contract, threat model, conventions,
 frontend/              Vue 3 + Vite + Bun application
   public/              served files (logo, auth illustration, theme bootstrap)
   src/                 views, components, stores, api clients, styles (design tokens)
-.github/workflows/     CI checks (no deploy job)
+.github/workflows/     CI gate: checks, images, scan, smoke test (no deploy job)
 docker-compose.yml     local stack, optional proxy profile
 .env.example           configuration template
 PRD.md                 product requirements
@@ -278,10 +279,16 @@ This is a beta posture, not a claim of formal assurance. The threat model and kn
 ## Testing
 
 ```bash
-cd backend  && gofmt -l . && go vet ./... && go test ./... && go build ./...
-cd frontend && bun run test && bun run build
+cd backend  && gofmt -l . && go vet ./... && go test -race ./... && go build ./...
+cd frontend && bun run build && bun run test && bun audit --audit-level=high
 docker compose config -q
+docker build -t promisedland-api:ci backend && docker build -t promisedland-web:ci frontend
 ```
+
+`go test -race` and `bun audit` are part of the gate, and `govulncheck` runs alongside them. The two
+advisories `bun audit` ignores are dev-only (`tinypool` behind vitest 3); CI passes
+`--ignore=GHSA-5gmw-xhrv-c9v3 --ignore=GHSA-85c8-ppgw-ccpr` and scans both images with Trivy, failing
+only on **fixable** HIGH/CRITICAL findings.
 
 Backend tests exercise handlers through `httptest` against a temporary SQLite database, covering
 auth, moderation, chat, events, media and the router middleware. Frontend tests cover stores, API
