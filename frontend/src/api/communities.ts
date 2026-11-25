@@ -35,7 +35,8 @@ export async function updateCommunity(
 }
 
 export async function joinCommunity(slug: string): Promise<void> {
-  await request<void>(`/communities/${encodeURIComponent(slug)}/membership`, { method: 'POST' })
+  // The API joins at POST /join and leaves at DELETE /membership.
+  await request<void>(`/communities/${encodeURIComponent(slug)}/join`, { method: 'POST' })
 }
 
 export async function leaveCommunity(slug: string): Promise<void> {
