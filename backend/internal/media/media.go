@@ -82,7 +82,11 @@ func writeUploadError(w http.ResponseWriter, status int, field, message string) 
 }
 
 func (h *handler) upload(w http.ResponseWriter, r *http.Request) {
-	userID, _ := shared.UserID(r)
+	userID, ok := shared.UserID(r)
+	if !ok {
+		shared.WriteError(w, http.StatusUnauthorized, shared.CodeAuthRequired, "Sign in to continue.")
+		return
+	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxMultipart)
 	if err := r.ParseMultipartForm(1 << 20); err != nil {
 		writeUploadError(w, http.StatusBadRequest, "file", "Files must be 5 MB or smaller.")
