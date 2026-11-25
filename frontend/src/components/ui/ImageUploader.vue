@@ -164,6 +164,9 @@ function remove(): void {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* The uploader sits in rails and cards, so it reacts to its own width, not
+     the viewport's. */
+  container-type: inline-size;
 }
 
 .uploader__label {
@@ -176,6 +179,11 @@ function remove(): void {
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
+}
+
+/* A banner is the full width of whatever holds it: preview above controls. */
+.uploader--wide .uploader__body {
+  flex-direction: column;
 }
 
 .uploader__preview {
@@ -228,9 +236,10 @@ function remove(): void {
 
 .uploader__controls {
   display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: var(--space-1);
-  min-width: 0;
 }
 
 .uploader__actions {
@@ -284,11 +293,9 @@ function remove(): void {
 }
 
 .uploader__meta {
-  overflow: hidden;
   color: var(--text-secondary);
   font-size: var(--text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
 }
 
 .uploader__hint {
@@ -317,9 +324,16 @@ function remove(): void {
   white-space: nowrap;
 }
 
-@media (max-width: 599px) {
+/* Narrow container (a rail card, a phone): stack instead of squeezing the
+   controls into whatever the preview leaves. */
+@container (max-width: 420px) {
   .uploader__body {
     flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .uploader__actions {
+    width: 100%;
   }
 }
 </style>
