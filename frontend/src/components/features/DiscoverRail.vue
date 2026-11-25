@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import Avatar from '@/components/ui/Avatar.vue'
+import { listCommunities } from '@/api/communities'
 import { listCreators } from '@/api/creators'
 import { listEvents } from '@/api/events'
-import type { Creator, Event } from '@/types'
+import { plural } from '@/components/features/format'
+import type { Community, Creator, Event } from '@/types'
+
+type RailSection = 'events' | 'creators' | 'communities'
+
+const props = withDefaults(defineProps<{ sections?: RailSection[] }>(), {
+  sections: () => ['events', 'creators'],
+})
+
+const has = (section: RailSection): boolean => props.sections.includes(section)
 
 const events = ref<Event[]>([])
 const creators = ref<Creator[]>([])
-const eventsLoading = ref(true)
-const creatorsLoading = ref(true)
+const communities = ref<Community[]>([])
+const eventsLoading = ref(has('events'))
+const creatorsLoading = ref(has('creators'))
+const communitiesLoading = ref(has('communities'))
 
 function eventDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(value))
@@ -44,15 +56,26 @@ async function loadCreators(): Promise<void> {
   }
 }
 
+async function loadCommunities(): Promise<void> {
+  try {
+    communities.value = (await listCommunities({ limit: 4 })).items
+  } catch {
+    communities.value = []
+  } finally {
+    communitiesLoading.value = false
+  }
+}
+
 onMounted(() => {
-  void loadEvents()
-  void loadCreators()
+  if (has('events')) void loadEvents()
+  if (has('creators')) void loadCreators()
+  if (has('communities')) void loadCommunities()
 })
 </script>
 
 <template>
   <div class="rail">
-    <section class="rail__section" aria-labelledby="rail-events-title">
+    <section v-if="has('events')" class="rail__section" aria-labelledby="rail-events-title">
       <h2 id="rail-events-title" class="rail__title">Upcoming events</h2>
 
       <div v-if="eventsLoading" class="rail__loading" aria-hidden="true">
@@ -78,7 +101,32 @@ onMounted(() => {
       <RouterLink class="rail__more" to="/events">Browse events</RouterLink>
     </section>
 
-    <section class="rail__section" aria-labelledby="rail-creators-title">
+    <section v-if="has('communities')" class="rail__section" aria-labelledby="rail-communities-title">
+      <h2 id="rail-communities-title" class="rail__title">Communities</h2>
+
+      <div v-if="communitiesLoading" class="rail__loading" aria-hidden="true">
+        <span class="skeleton-bar" />
+        <span class="skeleton-bar" />
+      </div>
+
+      <ul v-else-if="communities.length" class="rail__list">
+        <li v-for="community in communities" :key="community.id">
+          <RouterLink class="rail__row" :to="`/communities/${community.slug}`">
+            <Avatar :name="community.name" :src="community.icon_url" size="sm" />
+            <span class="rail__text">
+              <span class="rail__name">{{ community.name }}</span>
+              <span class="rail__meta">{{ plural(community.member_count, 'member') }}</span>
+            </span>
+          </RouterLink>
+        </li>
+      </ul>
+
+      <p v-else class="rail__empty">No communities to show yet.</p>
+
+      <RouterLink class="rail__more" to="/communities">Browse communities</RouterLink>
+    </section>
+
+    <section v-if="has('creators')" class="rail__section" aria-labelledby="rail-creators-title">
       <h2 id="rail-creators-title" class="rail__title">Creators</h2>
 
       <div v-if="creatorsLoading" class="rail__loading" aria-hidden="true">

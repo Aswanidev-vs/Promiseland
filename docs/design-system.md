@@ -162,6 +162,12 @@ Exact states. If a component deviates, the component is wrong, not the recipe.
 padding 4/10. Selected/active: `--ember-soft` bg, `--ember` text + 1px ember border. Topic tags are
 pills; anime-title tags may use mono (catalogue feel). Max one chip row per card; wrap, never scroll.
 
+**Image upload** (`ImageUploader.vue`) — preview plus Upload/Replace and Remove; 44px controls;
+JPEG/PNG/GIF/WebP up to 5 MB, validated client-side before the request; drag-and-drop is optional
+sugar over the same picker; errors sit under the controls. Removing a stored image persists
+immediately (the API clears with an empty string, not null), while adding one waits for the
+surrounding form's Save.
+
 **Avatar** — circle; fallback initials in Fraunces 560 on `--ink-700`, `--text-secondary`.
 Sizes 28/40/56/96 (profile 96, feed 40, chat 28). No colored rings except verified/organizer
 states, which use `--ember` 2px.
@@ -245,7 +251,8 @@ button; after reveal, a quiet "Hide again" text action stays.
 - **Communities (list):** search + topic chips row; list rows (not a card grid) with icon, name,
   mono member count, one-line description, join action right-aligned. Filter chips use the chip
   recipe; "Joined" state uses `--ok`.
-- **Community detail:** banner strip (ink-700 + wayfinder coordinate tag), name in Fraunces,
+- **Community detail:** banner strip (ink-700 + a coordinate tag), name in Fraunces, and — for owners and
+  moderators — an Appearance block in the rail where the icon and banner are uploaded from the device;
    rules in a sunken well, posts reuse the feed card exactly.
 - **Post detail:** same card, comments nested with a hairline thread line (indent 24/level,
   max depth 3), reply composer sunken. Spoiler blocks per recipe.
@@ -280,9 +287,9 @@ button; after reveal, a quiet "Hide again" text action stays.
 - **Chat home:** two panes from 768px up — one list panel holding Servers over Conversations with a hairline
   between, and a detail pane whose empty state uses the brand mark; below 768 it becomes
   two tabs over a single list. Structure follows `useBreakpoint()`; widths follow media queries.
-- **Settings (profile):** avatar row with a circular preview, a native file input (44px file-selector button)
-  that uploads JPEG/PNG/GIF/WebP up to 5 MB, a quiet "Remove photo" action, and the paste-a-link field kept
-  below it. Uploads appear in the preview and persist with "Save profile".
+- **Settings (profile):** the shared image uploader with a circular preview, the file name and pixel size
+  after a pick, and a quiet Remove that clears the stored image at once; the paste-a-link field stays below
+  as the alternative.
 - **Footer (`SiteFooter`):** brand column, Explore, Account, Legal, and a working small print row.
   Every link resolves to a real route; no `#` placeholders, no social icons for accounts we do not
   run. Reused on the landing, legal and error pages.

@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '@/components/layout/AppShell.vue'
-import HomeRail from '@/components/features/HomeRail.vue'
+import DiscoverRail from '@/components/features/DiscoverRail.vue'
 import ErrorView from '@/views/ErrorView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useFailureStore } from '@/stores/failure'
@@ -19,8 +19,15 @@ const isBare = computed(() => route.name === 'landing' || route.meta.bare === tr
 // The 503 takeover is limited to app screens: the landing and legal pages do
 // not need the API to render, so they stay up and show inline errors instead.
 // The rail only exists where the shell shows it, so the requests can wait.
-const railVisible = useMediaQuery('(min-width: 1280px)')
-const showRail = computed(() => !isBare.value && route.name === 'home' && railVisible.value)
+const railVisible = useMediaQuery('(min-width: 1366px)')
+const RAIL_SECTIONS: Record<string, Array<'events' | 'creators' | 'communities'>> = {
+  home: ['events', 'creators'],
+  communities: ['communities', 'events'],
+  events: ['creators', 'communities'],
+  discover: ['events', 'creators'],
+}
+const railSections = computed(() => RAIL_SECTIONS[String(route.name)] ?? [])
+const showRail = computed(() => !isBare.value && railVisible.value && railSections.value.length > 0)
 
 const failureCode = computed(() => {
   if (failure.renderFailed) return 500
@@ -37,7 +44,7 @@ onMounted(() => {
 <template>
   <AppShell :wide="isBare" :bare="isBare">
     <template v-if="showRail" #rail>
-      <HomeRail />
+      <DiscoverRail :sections="railSections" />
     </template>
 
     <RouterView v-slot="{ Component, route: currentRoute }">
