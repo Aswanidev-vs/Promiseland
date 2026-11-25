@@ -17,17 +17,7 @@
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <title>PromisedLand — Your fandom. Your people. Your place.</title>
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem('pl-theme');
-          var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
-          document.documentElement.setAttribute('data-theme', theme);
-          var meta = document.getElementById('meta-theme-color');
-          if (meta) meta.setAttribute('content', theme === 'light' ? '#f9f7f3' : '#090a0d');
-        } catch (e) {}
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="app"></div>
