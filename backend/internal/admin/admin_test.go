@@ -76,7 +76,7 @@ func TestOverviewAndTablesForStaff(t *testing.T) {
 
 	testutil.Exec(t, d, `
 		INSERT INTO posts (author_id, type, title, body) VALUES (?, 'text', 'First post', 'hello')`,
-		authorID, authorID)
+		authorID)
 	testutil.Exec(t, d, `
 		INSERT INTO communities (owner_id, name, slug, description) VALUES (?, 'Craft', 'craft', 'props')`,
 		authorID)
