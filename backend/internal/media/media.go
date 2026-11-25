@@ -27,6 +27,10 @@ const (
 	maxUploadBytes = 5 << 20 // 5 MiB of image data
 	maxMultipart   = maxUploadBytes + (1 << 20)
 	maxDimension   = 6000
+	// maxUploadsPerHour bounds how fast one account can fill the volume that
+	// also holds the database: an unbounded loop of valid uploads would
+	// otherwise starve SQLite writes for everyone.
+	maxUploadsPerHour = 30
 )
 
 var allowedFormats = map[string]struct {
@@ -85,6 +89,19 @@ func (h *handler) upload(w http.ResponseWriter, r *http.Request) {
 	userID, ok := shared.UserID(r)
 	if !ok {
 		shared.WriteError(w, http.StatusUnauthorized, shared.CodeAuthRequired, "Sign in to continue.")
+		return
+	}
+	var recent int
+	if err := h.d.DB.QueryRowContext(r.Context(),
+		`SELECT COUNT(*) FROM media WHERE owner_id = ? AND created_at > datetime('now','-1 hour')`,
+		userID).Scan(&recent); err != nil {
+		shared.WriteError(w, http.StatusInternalServerError, shared.CodeInternalError, "Could not check the upload allowance.")
+		return
+	}
+	if recent >= maxUploadsPerHour {
+		w.Header().Set("Retry-After", "600")
+		shared.WriteError(w, http.StatusTooManyRequests, "rate_limited",
+			"Too many uploads in a short time. Wait a few minutes and try again.")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxMultipart)

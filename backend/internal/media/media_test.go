@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -137,4 +138,30 @@ func httptestGet(t *testing.T, h http.Handler, path string, cookie *http.Cookie)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
+}
+
+// The volume holds the database too, so one account must not be able to loop
+// uploads until SQLite can no longer write.
+func TestUploadAllowanceIsPerAccountPerHour(t *testing.T) {
+	t.Setenv("MEDIA_PATH", t.TempDir())
+	d, user := testDeps(t)
+	h := testRouter(d)
+	cookie := authCookie(t, d, user)
+
+	for i := 0; i < maxUploadsPerHour; i++ {
+		if _, err := d.DB.Exec(`
+			INSERT INTO media(owner_id, storage_key, mime_type, size_bytes, width, height, created_at)
+			VALUES(?, ?, 'image/png', 100, 2, 2, datetime('now'))`,
+			user, "bulk-"+strconv.Itoa(i)+".png"); err != nil {
+			t.Fatalf("seed media: %v", err)
+		}
+	}
+
+	rec := uploadRequest(t, h, "one-more.png", "image/png", pngBytes(t), cookie)
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("over-allowance upload = %d %s, want 429", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("Retry-After") == "" {
+		t.Fatal("429 should carry Retry-After")
+	}
 }
