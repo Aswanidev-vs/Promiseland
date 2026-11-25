@@ -134,6 +134,7 @@ function retry(): void {
           <AppIcon name="events" :size="16" />
           <RouterLink to="/events">Browse events</RouterLink>
           <RouterLink to="/creators">Browse creators</RouterLink>
+          <RouterLink v-if="copy.retry" to="/status">Service status</RouterLink>
         </p>
       </div>
     </main>

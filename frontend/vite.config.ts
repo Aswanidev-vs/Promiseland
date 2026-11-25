@@ -58,6 +58,16 @@ export default defineConfig({
         changeOrigin: true,
         configure: apiProxyErrors('/api'),
       },
+      '/healthz': {
+        target: API_TARGET,
+        changeOrigin: true,
+        configure: apiProxyErrors('/healthz'),
+      },
+      '/readyz': {
+        target: API_TARGET,
+        changeOrigin: true,
+        configure: apiProxyErrors('/readyz'),
+      },
       '/ws': {
         target: API_TARGET.replace(/^http/, 'ws'),
         ws: true,

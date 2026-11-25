@@ -47,6 +47,7 @@ function browseAsGuest(): void {
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/events">Events</RouterLink>
         <RouterLink to="/creators">Creators</RouterLink>
+        <RouterLink to="/status">Service status</RouterLink>
       </nav>
 
       <nav class="footer__column" aria-label="Account">

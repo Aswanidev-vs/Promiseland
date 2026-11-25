@@ -270,6 +270,10 @@ button; after reveal, a quiet "Hide again" text action stays.
   events and creators — with a banner naming what an account adds, a trimmed sidebar and tab bar,
   no search, and a sign-in gate on RSVP and every other write action. Guests never see
   account-only destinations as live links.
+- **Service status (`/status`, bare shell):** reads `/healthz` and `/readyz` directly and reports what this
+  browser can observe: overall state as a dot plus words (never colour alone), one row per probe with latency
+  and HTTP status, a "check again every 15 seconds" toggle that pauses while the tab is hidden, and a strip of
+  the checks made since the page opened. No uptime percentages or historical claims the data cannot support.
 - **Footer (`SiteFooter`):** brand column, Explore, Account, Legal, and a working small print row.
   Every link resolves to a real route; no `#` placeholders, no social icons for accounts we do not
   run. Reused on the landing, legal and error pages.

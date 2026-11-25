@@ -30,7 +30,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Health endpoints: `http://localhost:8080/healthz` and `/readyz`. The web app is at `http://localhost:5173`.
+Health endpoints: `http://localhost:8080/healthz` and `/readyz`. The web app is at `http://localhost:5173`, and `http://localhost:5173/status` renders those two checks as a status page.
 
 For a fully containerized stack, use the edge profile and open `http://localhost` — nginx serves the SPA and proxies `/api/` + `/ws/` to the API:
 

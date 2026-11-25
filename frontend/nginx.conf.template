@@ -60,6 +60,19 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Liveness and readiness live at the API root, outside /api.
+    location = /healthz {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /readyz {
+        proxy_pass ${API_UPSTREAM};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location /media/ {
         proxy_pass ${API_UPSTREAM};
         proxy_http_version 1.1;

@@ -209,6 +209,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Privacy policy', bare: true },
   },
   {
+    path: '/status',
+    name: 'status',
+    component: () => import('@/views/StatusView.vue'),
+    meta: { title: 'Service status', bare: true },
+  },
+  {
     path: '/error/:code',
     name: 'error',
     component: () => import('@/views/ErrorView.vue'),
