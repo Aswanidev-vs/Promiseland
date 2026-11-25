@@ -243,7 +243,10 @@ router.beforeEach(async (to) => {
   }
 
   const auth = useAuthStore()
-  if (to.meta.requiresAuth || to.meta.guestOnly) await auth.ensureLoaded()
+  if (to.meta.requiresAuth || to.meta.guestOnly || to.name === 'landing') await auth.ensureLoaded()
+
+  // The landing explains the product; with a session the feed is home.
+  if (to.name === 'landing' && auth.isAuthenticated) return { name: 'home' }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }

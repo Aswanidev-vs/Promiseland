@@ -22,6 +22,8 @@ const route = useRoute()
 const auth = useAuthStore()
 const guest = useGuestStore()
 
+const homeTo = computed(() => (auth.isAuthenticated ? '/home' : '/'))
+
 const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
@@ -87,7 +89,7 @@ function isActive(to: string | undefined): boolean {
 
 <template>
   <div class="sidebar">
-    <RouterLink to="/" class="sidebar__brand" aria-label="PromisedLand home">
+    <RouterLink :to="homeTo" class="sidebar__brand" aria-label="PromisedLand home">
       <img class="sidebar__logo" src="/logo.png" alt="PromisedLand logo" width="28" height="28" />
       <span class="sidebar__wordmark u-wordmark">Promised<span class="sidebar__accent">Land</span></span>
     </RouterLink>
