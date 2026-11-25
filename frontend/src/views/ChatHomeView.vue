@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 import ChatServerList from '@/components/features/ChatServerList.vue'
 import ConversationList from '@/components/features/ConversationList.vue'
 import CreateServerDialog from '@/components/features/CreateServerDialog.vue'
@@ -10,11 +9,13 @@ import NewConversationDialog from '@/components/features/NewConversationDialog.v
 import ChatIcon from '@/components/features/ChatIcon.vue'
 import { listConversations, listServers } from '@/api/chat'
 import { useAuthStore } from '@/stores/auth'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import { errorMessage, isForbidden } from '@/components/features/format'
 import type { ChatServer, Conversation } from '@/types'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { isMobile } = useBreakpoint()
 
 const servers = ref<ChatServer[]>([])
 const conversations = ref<Conversation[]>([])
@@ -94,32 +95,37 @@ onMounted(() => {
       </RouterLink>
     </header>
 
-    <div class="chat-home__tabs" role="tablist" aria-label="Chat sections">
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="mobileTab === 'servers'"
-        :class="{ 'chat-home__tab--active': mobileTab === 'servers' }"
-        @click="mobileTab = 'servers'"
-      >
-        Servers
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="mobileTab === 'conversations'"
-        :class="{ 'chat-home__tab--active': mobileTab === 'conversations' }"
-        @click="mobileTab = 'conversations'"
-      >
-        Conversations
-      </button>
-    </div>
+    <div v-if="isMobile" class="chat-home__body">
+      <div class="chat-home__tabs" role="tablist" aria-label="Chat sections">
+        <button
+          id="chat-tab-servers"
+          type="button"
+          role="tab"
+          :aria-selected="mobileTab === 'servers'"
+          aria-controls="chat-panel-servers"
+          :class="{ 'chat-home__tab--active': mobileTab === 'servers' }"
+          @click="mobileTab = 'servers'"
+        >
+          Servers
+        </button>
+        <button
+          id="chat-tab-conversations"
+          type="button"
+          role="tab"
+          :aria-selected="mobileTab === 'conversations'"
+          aria-controls="chat-panel-conversations"
+          :class="{ 'chat-home__tab--active': mobileTab === 'conversations' }"
+          @click="mobileTab = 'conversations'"
+        >
+          Conversations
+        </button>
+      </div>
 
-    <div class="chat-home__grid">
-      <aside
-        class="chat-home__rail"
-        :class="{ 'chat-home__pane--hidden': mobileTab !== 'servers' }"
-        aria-label="Your servers"
+      <div
+        v-if="mobileTab === 'servers'"
+        id="chat-panel-servers"
+        role="tabpanel"
+        aria-labelledby="chat-tab-servers"
       >
         <ChatServerList
           :servers="servers"
@@ -130,13 +136,39 @@ onMounted(() => {
           @create="createOpen = true"
           @retry="loadServers"
         />
-      </aside>
+      </div>
 
-      <aside
-        class="chat-home__list"
-        :class="{ 'chat-home__pane--hidden': mobileTab !== 'conversations' }"
-        aria-label="Your conversations"
+      <div
+        v-else
+        id="chat-panel-conversations"
+        role="tabpanel"
+        aria-labelledby="chat-tab-conversations"
       >
+        <ConversationList
+          :conversations="conversations"
+          :current-user-id="auth.user?.id"
+          :loading="conversationsLoading"
+          :error="conversationsError"
+          :forbidden="conversationsForbidden"
+          @select="openConversation"
+          @new="newOpen = true"
+          @retry="loadConversations"
+        />
+      </div>
+    </div>
+
+    <div v-else class="chat-home__grid">
+      <aside class="chat-home__lists" aria-label="Your servers and conversations">
+        <ChatServerList
+          :servers="servers"
+          :loading="serversLoading"
+          :error="serversError"
+          :forbidden="serversForbidden"
+          @select="openServer"
+          @create="createOpen = true"
+          @retry="loadServers"
+        />
+
         <ConversationList
           :conversations="conversations"
           :current-user-id="auth.user?.id"
@@ -149,16 +181,18 @@ onMounted(() => {
         />
       </aside>
 
-      <section class="chat-home__empty" aria-label="Getting started">
-        <EmptyState
-          title="Pick a server or start a conversation"
-          description="Channels keep communities organized. Direct messages keep things personal."
-        >
-          <div class="chat-home__empty-actions">
-            <BaseButton variant="ghost" @click="createOpen = true">Create a server</BaseButton>
-            <BaseButton variant="ghost" @click="newOpen = true">Start a conversation</BaseButton>
-          </div>
-        </EmptyState>
+      <section class="chat-home__intro" aria-labelledby="chat-intro-title">
+        <img class="chat-home__mark" src="/logo.png" alt="" width="84" height="84" />
+        <h2 id="chat-intro-title" class="chat-home__intro-title">
+          Pick a server or start a conversation
+        </h2>
+        <p class="chat-home__intro-copy">
+          Channels keep communities organised. Direct messages keep things personal.
+        </p>
+        <div class="chat-home__intro-actions">
+          <BaseButton variant="primary" @click="createOpen = true">Create a server</BaseButton>
+          <BaseButton variant="secondary" @click="newOpen = true">Start a conversation</BaseButton>
+        </div>
       </section>
     </div>
 
@@ -201,95 +235,106 @@ onMounted(() => {
   text-decoration: none;
 }
 
+.chat-home__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
 .chat-home__tabs {
-  display: none;
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.chat-home__tabs button {
+  min-height: 44px;
+  flex: 1;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chat-home__tabs button.chat-home__tab--active {
+  border-bottom-color: var(--ember);
+  color: var(--text-primary);
 }
 
 .chat-home__grid {
   display: grid;
-  grid-template-columns: minmax(0, 168px) minmax(0, 232px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 288px) minmax(0, 1fr);
+  align-items: stretch;
   gap: var(--space-4);
-  align-items: start;
   min-width: 0;
 }
 
-.chat-home__rail,
-.chat-home__list,
-.chat-home__empty {
+.chat-home__lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-3);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-lg);
   background: var(--ink-850);
 }
 
-.chat-home__rail,
-.chat-home__list {
-  max-height: min(70vh, 640px);
-  padding: var(--space-3);
+.chat-home__lists > * + * {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-hairline);
 }
 
-.chat-home__empty {
-  display: grid;
-  min-height: 320px;
-  place-items: center;
+.chat-home__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-10) var(--space-6);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--ink-850);
+  text-align: center;
 }
 
-.chat-home__empty-actions {
+.chat-home__mark {
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.chat-home__intro-title {
+  max-width: 22ch;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.chat-home__intro-copy {
+  max-width: 42ch;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.chat-home__intro-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  padding-top: var(--space-2);
 }
 
 @media (max-width: 1023px) {
   .chat-home__grid {
-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-  }
-
-  .chat-home__empty {
-    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
   }
 }
 
-@media (max-width: 767px) {
-  .chat-home__tabs {
-    display: flex;
-    gap: var(--space-2);
-    border-bottom: 1px solid var(--border-hairline);
-  }
-
-  .chat-home__tabs button {
-    min-height: 44px;
-    flex: 1;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-  }
-
-  .chat-home__tabs button.chat-home__tab--active {
-    border-bottom-color: var(--ember);
-    color: var(--text-primary);
-  }
-
-  .chat-home__grid {
-    display: block;
-  }
-
-  .chat-home__rail,
-  .chat-home__list,
-  .chat-home__empty {
-    max-height: none;
-    border: 0;
-    background: transparent;
-    padding: 0;
-  }
-
-  .chat-home__pane--hidden,
-  .chat-home__empty {
-    display: none;
-  }
-}
 </style>

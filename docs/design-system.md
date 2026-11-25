@@ -196,6 +196,9 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 ## 4. Layout & shell
 
+- **Structural breakpoints:** `useBreakpoint()` (mobile < 768, tablet 768–1023, desktop ≥ 1024) decides
+  structure that CSS cannot express, such as how many panes a screen renders. Sizes and spacing stay in
+  media queries; do not duplicate a breakpoint value in both places.
 - **Desktop ≥1024:** sidebar 240 (bg `--ink-850`, right hairline) + main column max 720 +
   right rail 280, gap 24, canvas max 1280, centered. Top bar 64 (page bg, bottom hairline,
   search field max 480 centered).
@@ -274,6 +277,12 @@ button; after reveal, a quiet "Hide again" text action stays.
   browser can observe: overall state as a dot plus words (never colour alone), one row per probe with latency
   and HTTP status, a "check again every 15 seconds" toggle that pauses while the tab is hidden, and a strip of
   the checks made since the page opened. No uptime percentages or historical claims the data cannot support.
+- **Chat home:** two panes from 768px up — one list panel holding Servers over Conversations with a hairline
+  between, and a detail pane whose empty state uses the brand mark, not the wayfinder; below 768 it becomes
+  two tabs over a single list. Structure follows `useBreakpoint()`; widths follow media queries.
+- **Settings (profile):** avatar row with a circular preview, a native file input (44px file-selector button)
+  that uploads JPEG/PNG/GIF/WebP up to 5 MB, a quiet "Remove photo" action, and the paste-a-link field kept
+  below it. Uploads appear in the preview and persist with "Save profile".
 - **Footer (`SiteFooter`):** brand column, Explore, Account, Legal, and a working small print row.
   Every link resolves to a real route; no `#` placeholders, no social icons for accounts we do not
   run. Reused on the landing, legal and error pages.
