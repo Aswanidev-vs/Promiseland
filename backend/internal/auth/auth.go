@@ -52,7 +52,7 @@ func Register(r chi.Router, d *shared.Deps) {
 	s := &service{d: d, limiter: newRateLimiter()}
 	r.With(s.limiter.middleware("register", 5)).Post("/auth/register", s.register)
 	r.With(s.limiter.middleware("login", 10)).Post("/auth/login", s.login)
-	r.Post("/auth/verify", s.verify)
+	r.With(s.limiter.middleware("verify", 10)).Post("/auth/verify", s.verify)
 	r.With(s.limiter.middleware("reset-request", 5)).Post("/auth/password-reset/request", s.passwordResetRequest)
 	r.With(s.limiter.middleware("reset-confirm", 5)).Post("/auth/password-reset/confirm", s.passwordResetConfirm)
 }
