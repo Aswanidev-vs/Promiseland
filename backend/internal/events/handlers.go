@@ -145,16 +145,18 @@ func addIssue(details map[string]string, key, message string) {
 
 // validCover checks an optional cover media reference against the media table.
 // A missing table is tolerated so events keep working if media is not migrated.
-func validCover(ctx context.Context, d *shared.Deps, id *int64) bool {
+// validCover accepts an absent cover, or media owned by the organizer: the same
+// rule posts apply, so one user cannot attach another user's upload.
+func validCover(ctx context.Context, d *shared.Deps, id *int64, ownerID int64) bool {
 	if id == nil || *id <= 0 {
 		return true
 	}
 	if !tableExists(d, "media") {
 		return true
 	}
-	var exists int
-	err := d.DB.QueryRowContext(ctx, `SELECT 1 FROM media WHERE id = ?`, *id).Scan(&exists)
-	return err == nil
+	var mediaOwner int64
+	err := d.DB.QueryRowContext(ctx, `SELECT owner_id FROM media WHERE id = ?`, *id).Scan(&mediaOwner)
+	return err == nil && mediaOwner == ownerID
 }
 
 func parseEventID(w http.ResponseWriter, r *http.Request) (int64, bool) {
@@ -331,7 +333,7 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 	addIssue(details, "starts_at", timePairError(v.StartsAt, v.EndsAt))
 	addIssue(details, "city", placeError(v.City, v.Country, v.VenueText))
 	addIssue(details, "capacity", capacityError(v.Capacity))
-	if !validCover(r.Context(), h.d, v.CoverMediaID) {
+	if !validCover(r.Context(), h.d, v.CoverMediaID, userID) {
 		addIssue(details, "cover_media_id", "Cover image not found.")
 	}
 	if len(details) > 0 {
@@ -528,7 +530,7 @@ func (h *handler) update(w http.ResponseWriter, r *http.Request) {
 		if cover.Value != nil && *cover.Value <= 0 {
 			cover.Value = nil
 		}
-		if !validCover(r.Context(), h.d, cover.Value) {
+		if !validCover(r.Context(), h.d, cover.Value, userID) {
 			addIssue(details, "cover_media_id", "Cover image not found.")
 		}
 		sets = append(sets, "cover_media_id = ?")

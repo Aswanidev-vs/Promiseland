@@ -415,3 +415,32 @@ func TestUnauthorizedAndErrorEnvelope(t *testing.T) {
 		t.Fatalf("unexpected error body: %+v", got)
 	}
 }
+
+// A cover is an upload's id; attaching someone else's upload must fail.
+func TestEventCoverMustBelongToTheOrganiser(t *testing.T) {
+	d, alice := testDeps(t)
+	h := testRouter(d)
+	aliceCookie := authCookie(t, d, alice)
+	bob := insertUser(t, d, "bob")
+	bobCookie := authCookie(t, d, bob)
+
+	res, err := d.DB.Exec(`
+		INSERT INTO media(owner_id, storage_key, mime_type, size_bytes, width, height, created_at)
+		VALUES(?, 'cover.png', 'image/png', 100, 2, 2, datetime('now'))`, alice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mediaID, _ := res.LastInsertId()
+
+	body := map[string]any{
+		"title": "Screening", "event_type": "screening",
+		"starts_at": "2026-12-01T18:00:00Z", "ends_at": "2026-12-01T20:00:00Z",
+		"city": "London", "cover_media_id": mediaID,
+	}
+	if rec := request(t, h, http.MethodPost, "/api/v1/events", body, bobCookie); rec.Code != http.StatusBadRequest {
+		t.Fatalf("bob attached alice's media: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := request(t, h, http.MethodPost, "/api/v1/events", body, aliceCookie); rec.Code != http.StatusCreated {
+		t.Fatalf("owner could not attach own media: %d %s", rec.Code, rec.Body.String())
+	}
+}
