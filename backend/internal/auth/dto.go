@@ -21,6 +21,8 @@ type User struct {
 	Visibility   string  `json:"visibility"`
 	Discoverable bool    `json:"discoverable"`
 	CreatedAt    string  `json:"created_at"`
+	/** True when this account holds a platform staff grant (the admin console). */
+	IsStaff bool `json:"is_staff"`
 }
 
 type registerRequest struct {
