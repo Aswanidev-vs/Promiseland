@@ -21,6 +21,7 @@ import {
   updateCommunity,
 } from '@/api/communities'
 import { useUiStore } from '@/stores/ui'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import type { Community, CommunityRule, Post, UserSummary } from '@/types'
 import { errorMessage, isForbidden, isNotFound, plural } from '@/components/features/format'
 
@@ -127,6 +128,27 @@ async function toggleMembership(): Promise<void> {
     actionError.value = errorMessage(cause, 'We could not update your membership. Try again.')
   } finally {
     busy.value = false
+  }
+}
+
+async function saveCommunityImage(field: 'icon_url' | 'banner_url', value: string | null): Promise<void> {
+  if (!community.value) return
+  const previous = community.value[field]
+  community.value = { ...community.value, [field]: value }
+  try {
+    const updated = await updateCommunity(slug.value, { [field]: value })
+    community.value = updated
+    ui.pushToast({
+      title: field === 'icon_url' ? 'Community icon updated' : 'Community banner updated',
+      tone: 'success',
+    })
+  } catch (cause) {
+    community.value = { ...community.value, [field]: previous }
+    ui.pushToast({
+      title: 'Could not update the image',
+      message: errorMessage(cause, 'Try again in a moment.'),
+      tone: 'error',
+    })
   }
 }
 
@@ -294,6 +316,24 @@ watch(slug, load)
                   {{ editingDescription ? 'Save description' : 'Edit description' }}
                 </BaseButton>
               </div>
+            </div>
+            <div class="community__mod-block">
+              <span class="community__label">Appearance</span>
+              <ImageUploader
+                :model-value="community.icon_url"
+                label="Icon"
+                shape="circle"
+                :size="64"
+                hint="JPEG, PNG, GIF or WebP up to 5 MB."
+                @update:model-value="saveCommunityImage('icon_url', $event)"
+              />
+              <ImageUploader
+                :model-value="community.banner_url"
+                label="Banner"
+                shape="wide"
+                hint="Shown across the top of this page. JPEG, PNG, GIF or WebP up to 5 MB."
+                @update:model-value="saveCommunityImage('banner_url', $event)"
+              />
             </div>
             <div class="community__mod-block">
               <label class="community__label" for="moderator-id">Add a moderator by member ID</label>

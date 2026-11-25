@@ -89,10 +89,10 @@ describe('SettingsView avatar upload', () => {
     await flushPromises()
 
     expect(uploadMedia).toHaveBeenCalledTimes(1)
-    expect(wrapper.get('.avatar img').attributes('src')).toBe(
+    expect(wrapper.get('.uploader__preview img').attributes('src')).toBe(
       '/media/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png',
     )
-    expect(wrapper.text()).toContain('Photo uploaded. Save the profile to keep it.')
+    expect(wrapper.text()).toContain('me.png · 4 × 3')
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -125,14 +125,16 @@ describe('SettingsView avatar upload', () => {
     expect(wrapper.text()).toContain('Images must be 5 MB or smaller.')
   })
 
-  it('clears the preview when the photo is removed', async () => {
+  it('removes the photo on the server as soon as Remove is pressed', async () => {
     const wrapper = await setup()
 
     await chooseFile(wrapper, new File(['image'], 'me.png', { type: 'image/png' }))
     await flushPromises()
 
-    await wrapper.findAll('button').find((button) => button.text() === 'Remove photo')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === 'Remove')!.trigger('click')
+    await flushPromises()
 
-    expect(wrapper.find('.avatar img').exists()).toBe(false)
+    expect(wrapper.find('.uploader__preview img').exists()).toBe(false)
+    expect(updateMe).toHaveBeenCalledWith({ avatar_url: '' })
   })
 })

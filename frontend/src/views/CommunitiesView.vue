@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import CommunityCard from '@/components/features/CommunityCard.vue'
@@ -22,6 +23,7 @@ const loadingMore = ref(false)
 const error = ref('')
 const forbidden = ref(false)
 const showCreate = ref(false)
+const newIconUrl = ref('')
 const creating = ref(false)
 const createError = ref('')
 const slugTouched = ref(false)
@@ -98,10 +100,12 @@ async function submitCreate(): Promise<void> {
       description: form.value.description.trim(),
       visibility: form.value.visibility,
       ...(rules.length ? { rules } : {}),
+      ...(newIconUrl.value ? { icon_url: newIconUrl.value } : {}),
     })
     ui.pushToast({ title: 'Community created', tone: 'success' })
     showCreate.value = false
     form.value = { name: '', slug: '', description: '', visibility: 'public', rules: '' }
+    newIconUrl.value = ''
     slugTouched.value = false
     query.value = ''
     await load(true)
@@ -137,6 +141,13 @@ onBeforeUnmount(() => {
         <BaseInput v-model="form.name" label="Name" :error="fieldErrors.name" @update:model-value="slugTouched = false" />
         <BaseInput v-model="form.slug" label="Slug" hint="Used in the community link." :error="fieldErrors.slug" @update:model-value="slugTouched = true" />
         <BaseInput v-model="form.description" label="Description" :error="fieldErrors.description" />
+        <ImageUploader
+          v-model="newIconUrl"
+          label="Community icon"
+          shape="circle"
+          :size="72"
+          hint="Optional. JPEG, PNG, GIF or WebP up to 5 MB."
+        />
         <label class="communities__label" for="community-visibility">Visibility</label>
         <select id="community-visibility" v-model="form.visibility" class="communities__control">
           <option value="public">Public</option>

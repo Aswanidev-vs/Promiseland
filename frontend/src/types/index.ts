@@ -315,6 +315,9 @@ export interface CreateCommunityInput {
   description: string
   visibility: string
   rules?: string[]
+  /** URL or uploaded /media path for the community icon. */
+  icon_url?: string
+  banner_url?: string
 }
 
 export interface FeedParams {

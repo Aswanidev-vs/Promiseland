@@ -3,12 +3,11 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
-import Avatar from '@/components/ui/Avatar.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import { getMe } from '@/api/auth'
-import { uploadMedia } from '@/api/media'
 import { updateMe, updateSettings } from '@/api/users'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -27,8 +26,6 @@ const form = reactive({
   discoverable: true,
 })
 const loading = ref(true)
-const uploadingAvatar = ref(false)
-const uploadError = ref('')
 const savingProfile = ref(false)
 const savingPrivacy = ref(false)
 const error = ref('')
@@ -61,35 +58,27 @@ async function load(): Promise<void> {
   }
 }
 
-const avatarTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const maxAvatarBytes = 5 * 1024 * 1024
+async function onAvatarChange(value: string | null): Promise<void> {
+  const previous = form.avatarUrl
+  form.avatarUrl = value ?? ''
 
-async function uploadAvatar(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  // Reset the input so choosing the same file again still fires a change.
-  input.value = ''
-  if (!file) return
+  // Adding an image waits for "Save profile"; removing one takes effect
+  // immediately, because that is what the button promises.
+  if (value !== null || !previous) return
 
-  uploadError.value = ''
-  if (!avatarTypes.includes(file.type)) {
-    uploadError.value = 'Choose a JPEG, PNG, GIF or WebP image.'
-    return
-  }
-  if (file.size > maxAvatarBytes) {
-    uploadError.value = 'Images must be 5 MB or smaller.'
-    return
-  }
-
-  uploadingAvatar.value = true
   try {
-    const media = await uploadMedia(file)
-    form.avatarUrl = media.url
-    notice.value = 'Photo uploaded. Save the profile to keep it.'
+    // The API reads an empty string as "clear it"; a JSON null means "unchanged".
+    await updateMe({ avatar_url: '' })
+    await auth.fetchMe()
+    notice.value = 'Profile photo removed.'
+    ui.pushToast({ title: 'Profile photo removed', tone: 'success' })
   } catch (cause) {
-    uploadError.value = errorMessage(cause, 'We could not upload that image. Try again.')
-  } finally {
-    uploadingAvatar.value = false
+    form.avatarUrl = previous
+    ui.pushToast({
+      title: 'Could not remove the photo',
+      message: errorMessage(cause, 'Try again in a moment.'),
+      tone: 'error',
+    })
   }
 }
 
@@ -107,7 +96,8 @@ async function saveProfile(): Promise<void> {
       display_name: form.displayName.trim(),
       bio: form.bio.trim(),
       location: form.location.trim(),
-      avatar_url: form.avatarUrl.trim() || null,
+      // Empty string clears the stored image; null would leave it untouched.
+      avatar_url: form.avatarUrl.trim(),
     } as unknown as Parameters<typeof updateMe>[0]
     await updateMe(patch)
     await auth.fetchMe()
@@ -179,35 +169,14 @@ onMounted(load)
         <form class="settings__form" novalidate @submit.prevent="saveProfile">
           <BaseInput v-model="form.displayName" label="Display name" />
 
-          <div class="settings__avatar">
-            <Avatar
-              :name="form.displayName || 'Your profile'"
-              :src="form.avatarUrl || null"
-              size="lg"
-            />
-            <div class="settings__avatar-body">
-              <input
-                class="settings__upload"
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                aria-label="Upload a profile photo"
-                :disabled="uploadingAvatar"
-                @change="uploadAvatar"
-              />
-              <button
-                v-if="form.avatarUrl"
-                type="button"
-                class="settings__remove"
-                @click="form.avatarUrl = ''"
-              >
-                Remove photo
-              </button>
-              <p class="settings__note">
-                JPEG, PNG, GIF or WebP up to 5 MB. {{ uploadingAvatar ? 'Uploading…' : 'Save the profile after uploading.' }}
-              </p>
-              <p v-if="uploadError" class="settings__error" role="alert">{{ uploadError }}</p>
-            </div>
-          </div>
+          <ImageUploader
+            :model-value="form.avatarUrl || null"
+            label="Profile photo"
+            shape="circle"
+            :size="96"
+            hint="JPEG, PNG, GIF or WebP, up to 5 MB. Adding a photo is saved with the profile."
+            @update:model-value="onAvatarChange"
+          />
 
           <BaseInput
             v-model="form.avatarUrl"
@@ -301,69 +270,6 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-.settings__avatar {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.settings__avatar-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.settings__upload {
-  max-width: 100%;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-
-.settings__upload::file-selector-button {
-  min-height: 44px;
-  margin-right: var(--space-3);
-  padding: 0 var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color var(--dur-fast) var(--ease),
-    border-color var(--dur-fast) var(--ease);
-}
-
-.settings__upload::file-selector-button:hover {
-  border-color: var(--border-hairline);
-  background: var(--ink-700);
-}
-
-.settings__upload:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.settings__remove {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--tide);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.settings__remove:hover {
-  color: var(--text-primary);
 }
 
 .settings__field {
