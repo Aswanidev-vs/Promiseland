@@ -1,8 +1,18 @@
+<script lang="ts">
+// Module scope on purpose: one counter per module keeps generated ids unique
+// across instances. A counter inside <script setup> resets per instance, which
+// gives every field the same id and makes labels point at the wrong control.
+let sequence = 0
+
+function nextId(prefix: string): string {
+  sequence += 1
+  return `${prefix}-${sequence}`
+}
+</script>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from './AppIcon.vue'
-
-let sequence = 0
 
 const props = withDefaults(
   defineProps<{
@@ -35,7 +45,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-const generatedId = `pl-input-${++sequence}`
+const generatedId = nextId('pl-input')
 const inputId = computed(() => props.id || generatedId)
 const hintId = computed(() => (props.error ? `${inputId.value}-error` : props.hint ? `${inputId.value}-hint` : ''))
 const describedBy = computed(() => hintId.value || undefined)

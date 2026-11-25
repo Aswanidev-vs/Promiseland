@@ -11,14 +11,12 @@ import FeedTabs from '@/components/features/FeedTabs.vue'
 import PostCard from '@/components/features/PostCard.vue'
 import UserCard from '@/components/features/UserCard.vue'
 import {
-  addModerator,
   getCommunity,
   joinCommunity,
   leaveCommunity,
   listCommunityPosts,
   listMembers,
   listRules,
-  updateCommunity,
 } from '@/api/communities'
 import { useUiStore } from '@/stores/ui'
 import type { Community, CommunityRule, Post, UserSummary } from '@/types'
@@ -42,9 +40,6 @@ const error = ref('')
 const notFound = ref(false)
 const forbidden = ref(false)
 const actionError = ref('')
-const editingDescription = ref(false)
-const descriptionDraft = ref('')
-const moderatorId = ref('')
 
 const isModerator = computed(
   () => community.value?.role === 'owner' || community.value?.role === 'moderator',
@@ -64,7 +59,6 @@ async function load(): Promise<void> {
     const [found, communityRules] = await Promise.all([getCommunity(slug.value), listRules(slug.value)])
     community.value = found
     rules.value = communityRules
-    descriptionDraft.value = found.description || ''
     await loadPosts(true)
   } catch (cause) {
     if (isForbidden(cause)) forbidden.value = true
@@ -125,41 +119,6 @@ async function toggleMembership(): Promise<void> {
     ui.pushToast({ title: joining ? 'Joined community' : 'Left community', tone: 'success' })
   } catch (cause) {
     actionError.value = errorMessage(cause, 'We could not update your membership. Try again.')
-  } finally {
-    busy.value = false
-  }
-}
-
-async function saveDescription(): Promise<void> {
-  if (!descriptionDraft.value.trim()) return
-  busy.value = true
-  actionError.value = ''
-  try {
-    const updated = await updateCommunity(slug.value, { description: descriptionDraft.value.trim() })
-    community.value = updated
-    editingDescription.value = false
-    ui.pushToast({ title: 'Description updated', tone: 'success' })
-  } catch (cause) {
-    actionError.value = errorMessage(cause, 'We could not save the description. Try again.')
-  } finally {
-    busy.value = false
-  }
-}
-
-async function inviteModerator(): Promise<void> {
-  const id = Number(moderatorId.value)
-  if (!Number.isInteger(id) || id <= 0) {
-    actionError.value = 'Enter a valid member ID.'
-    return
-  }
-  busy.value = true
-  actionError.value = ''
-  try {
-    await addModerator(slug.value, id)
-    moderatorId.value = ''
-    ui.pushToast({ title: 'Moderator added', tone: 'success' })
-  } catch (cause) {
-    actionError.value = errorMessage(cause, 'We could not add that moderator. Try again.')
   } finally {
     busy.value = false
   }
@@ -276,37 +235,16 @@ watch(slug, load)
 
           <BaseCard v-if="isModerator" class="community__mod">
             <h2 class="community__rail-title">Moderator tools</h2>
-            <div class="community__mod-block">
-              <label class="community__label" for="community-description">Description</label>
-              <textarea
-                v-if="editingDescription"
-                id="community-description"
-                v-model="descriptionDraft"
-                class="community__control"
-                rows="3"
-              />
-              <p v-else class="community__note">{{ community.description || 'No description yet.' }}</p>
-              <div class="community__mod-actions">
-                <BaseButton v-if="editingDescription" size="sm" variant="ghost" @click="editingDescription = false">
-                  Cancel
-                </BaseButton>
-                <BaseButton size="sm" variant="secondary" :loading="busy" @click="editingDescription ? saveDescription() : (editingDescription = true)">
-                  {{ editingDescription ? 'Save description' : 'Edit description' }}
-                </BaseButton>
-              </div>
-            </div>
-            <div class="community__mod-block">
-              <label class="community__label" for="moderator-id">Add a moderator by member ID</label>
-              <input
-                id="moderator-id"
-                v-model="moderatorId"
-                class="community__control"
-                type="number"
-                min="1"
-                inputmode="numeric"
-              />
-              <BaseButton size="sm" variant="secondary" :loading="busy" @click="inviteModerator">Add moderator</BaseButton>
-            </div>
+            <p class="community__note">
+              Details, appearance, rules and moderators live on one page.
+            </p>
+            <BaseButton
+              variant="secondary"
+              size="sm"
+              :to="`/communities/${community.slug}/manage`"
+            >
+              Manage community
+            </BaseButton>
           </BaseCard>
         </aside>
       </div>

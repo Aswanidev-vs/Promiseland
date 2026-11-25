@@ -22,6 +22,8 @@ const route = useRoute()
 const auth = useAuthStore()
 const guest = useGuestStore()
 
+const homeTo = computed(() => (auth.isAuthenticated ? '/home' : '/'))
+
 const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
@@ -55,7 +57,7 @@ const sections = computed<NavSection[]>(() => {
     ]
   }
 
-  return [
+  const base: NavSection[] = [
   {
     items: [
       { label: 'Home', icon: 'home', to: '/home' },
@@ -75,6 +77,16 @@ const sections = computed<NavSection[]>(() => {
     ],
   },
   ]
+
+  // The console is for granted staff only; the API refuses everyone else too.
+  if (auth.user?.is_staff) {
+    base.push({
+      label: 'Staff',
+      items: [{ label: 'Admin', icon: 'shield', to: '/admin' }],
+    })
+  }
+
+  return base
 })
 
 /** Inclusive match so /communities/:slug keeps Communities lit. */
@@ -87,7 +99,7 @@ function isActive(to: string | undefined): boolean {
 
 <template>
   <div class="sidebar">
-    <RouterLink to="/" class="sidebar__brand" aria-label="PromisedLand home">
+    <RouterLink :to="homeTo" class="sidebar__brand" aria-label="PromisedLand home">
       <img class="sidebar__logo" src="/logo.png" alt="PromisedLand logo" width="28" height="28" />
       <span class="sidebar__wordmark u-wordmark">Promised<span class="sidebar__accent">Land</span></span>
     </RouterLink>

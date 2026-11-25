@@ -4,7 +4,6 @@ import { RouterLink } from 'vue-router'
 import Avatar from '@/components/ui/Avatar.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import TagChip from '@/components/ui/TagChip.vue'
-import WayfinderMark from '@/components/ui/WayfinderMark.vue'
 import type { Event } from '@/types'
 import { plural } from './format'
 import { eventDateParts, eventTypeLabel, formatCapacity } from './formatR2'
@@ -36,7 +35,7 @@ const statusNote = computed(() => {
     <div class="event-card__media">
       <img v-if="event.cover_url" class="event-card__cover" :src="event.cover_url" :alt="event.title" loading="lazy" />
       <div v-else class="event-card__placeholder" aria-hidden="true">
-        <WayfinderMark detailed size="92px" />
+        <img class="brand-mark" src="/logo.png" alt="" style="--mark-size: 64px" />
       </div>
       <span class="event-card__badge"><TagChip :label="typeLabel" tone="ember" /></span>
     </div>

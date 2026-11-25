@@ -32,6 +32,8 @@ export interface User {
   visibility: string
   discoverable: boolean
   created_at: string
+  /** Platform staff grant: shows the admin console. */
+  is_staff?: boolean
   /** @deprecated R0 alias — use display_name. */
   displayName?: string | null
   /** @deprecated R0 alias — use avatar_url. */
@@ -315,6 +317,9 @@ export interface CreateCommunityInput {
   description: string
   visibility: string
   rules?: string[]
+  /** URL or uploaded /media path for the community icon. */
+  icon_url?: string
+  banner_url?: string
 }
 
 export interface FeedParams {

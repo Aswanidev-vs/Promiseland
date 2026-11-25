@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+// The mark goes to the app for a signed-in visitor and to the landing for a guest.
+const homeTo = computed(() => (auth.isAuthenticated ? '/home' : '/'))
 </script>
 
 <template>
   <header class="masthead">
-    <RouterLink to="/" class="masthead__brand" aria-label="PromisedLand home">
+    <RouterLink :to="homeTo" class="masthead__brand" aria-label="PromisedLand home">
       <img class="masthead__logo" src="/logo.png" alt="" width="26" height="26" />
       <span class="masthead__wordmark">Promised<span class="masthead__accent">Land</span></span>
     </RouterLink>

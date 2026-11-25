@@ -3,12 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import AnimePicker from '@/components/features/AnimePicker.vue'
 import CreatorCategoryPicker from '@/components/features/CreatorCategoryPicker.vue'
 import { listCommunities } from '@/api/communities'
-import { createPost, uploadMedia } from '@/api/posts'
+import { createPost } from '@/api/posts'
 import { useUiStore } from '@/stores/ui'
 import type { Anime, Community, Media } from '@/types'
 import { errorMessage, isForbidden } from '@/components/features/format'
@@ -43,14 +44,13 @@ const episode = ref('')
 const pollQuestion = ref('')
 const pollOptions = ref<string[]>(['', ''])
 const media = ref<Media[]>([])
-const uploading = ref(false)
 const loadingCommunities = ref(true)
 const publishing = ref(false)
 const error = ref('')
 const forbidden = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
-const canPublish = computed(() => !publishing.value && !uploading.value)
+const canPublish = computed(() => !publishing.value)
 
 function validate(): boolean {
   const next: Record<string, string> = {}
@@ -68,22 +68,13 @@ function validate(): boolean {
   return Object.keys(next).length === 0
 }
 
-async function onFile(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  uploading.value = true
-  error.value = ''
-  try {
-    media.value = [...media.value, await uploadMedia(file)]
-    fieldErrors.value = { ...fieldErrors.value, image: '' }
-    ui.pushToast({ title: 'Image uploaded', tone: 'success' })
-  } catch (cause) {
-    error.value = errorMessage(cause, 'We could not upload that image. Try again.')
-  } finally {
-    uploading.value = false
-    input.value = ''
-  }
+function onImageUploaded(item: Media): void {
+  media.value = [item]
+  fieldErrors.value = { ...fieldErrors.value, image: '' }
+}
+
+function onImageCleared(value: string | null): void {
+  if (value === null) media.value = []
 }
 
 async function publish(): Promise<void> {
@@ -194,10 +185,13 @@ onMounted(async () => {
       </div>
 
       <div v-if="type === 'image'" class="create__field">
-        <label class="create__label" for="post-image">Image</label>
-        <input id="post-image" type="file" accept="image/*" :disabled="uploading" @change="onFile" />
-        <p v-if="uploading" class="create__hint" role="status">Uploading image…</p>
-        <p v-if="media.length" class="create__hint">{{ media.length }} image attached</p>
+        <ImageUploader
+          :model-value="media[0]?.url ?? null"
+          label="Image"
+          hint="JPEG, PNG, GIF or WebP up to 5 MB."
+          @uploaded="onImageUploaded"
+          @update:model-value="onImageCleared"
+        />
         <p v-if="fieldErrors.image" class="create__error" role="alert">{{ fieldErrors.image }}</p>
       </div>
 

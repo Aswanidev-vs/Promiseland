@@ -115,11 +115,11 @@ func validateCommunity(in communityInput) map[string]string {
 	if in.Visibility != "" && in.Visibility != "public" && in.Visibility != "private" {
 		details["visibility"] = "Visibility must be public or private."
 	}
-	if in.IconURL.Set && in.IconURL.Value != nil && !shared.ValidOptionalURL(*in.IconURL.Value) {
-		details["icon_url"] = "Icon must be an http or https address."
+	if in.IconURL.Set && in.IconURL.Value != nil && !shared.ValidProfileImage(*in.IconURL.Value) {
+		details["icon_url"] = "Upload an image or enter an http(s) URL."
 	}
-	if in.BannerURL.Set && in.BannerURL.Value != nil && !shared.ValidOptionalURL(*in.BannerURL.Value) {
-		details["banner_url"] = "Banner must be an http or https address."
+	if in.BannerURL.Set && in.BannerURL.Value != nil && !shared.ValidProfileImage(*in.BannerURL.Value) {
+		details["banner_url"] = "Upload an image or enter an http(s) URL."
 	}
 	return details
 }

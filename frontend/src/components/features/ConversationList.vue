@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Avatar from '@/components/ui/Avatar.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import ChatIcon from './ChatIcon.vue'
 import PresenceDot from './PresenceDot.vue'
@@ -64,29 +63,14 @@ function statusOf(conversation: Conversation): string {
 
     <SkeletonList v-if="loading" :rows="4" avatar />
 
-    <EmptyState
-      v-else-if="forbidden"
-      title="Conversations are not available"
-      description="Your session may have expired. Sign in again to see your messages."
-      action-label="Try again"
-      @action="emit('retry')"
-    />
+    <div v-else-if="forbidden || error" class="conversations__empty" role="alert">
+      <p>{{ error || 'Conversations are not available. Your session may have expired.' }}</p>
+      <button type="button" class="conversations__retry" @click="emit('retry')">Try again</button>
+    </div>
 
-    <EmptyState
-      v-else-if="error"
-      title="We could not load conversations"
-      :description="error"
-      action-label="Try again"
-      @action="emit('retry')"
-    />
-
-    <EmptyState
-      v-else-if="!conversations.length"
-      title="No conversations yet"
-      description="Start a direct message or gather a few people in a group."
-      action-label="Start a conversation"
-      @action="emit('new')"
-    />
+    <p v-else-if="!conversations.length" class="conversations__empty">
+      No conversations yet. Use the plus button for a direct message or a small group.
+    </p>
 
     <ul v-else class="conversations__list">
       <li v-for="conversation in ordered" :key="conversation.id">
@@ -131,6 +115,30 @@ function statusOf(conversation: Conversation): string {
   flex-direction: column;
   gap: var(--space-3);
   min-height: 0;
+}
+
+.conversations__empty {
+  padding: var(--space-3) var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.conversations__retry {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tide);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.conversations__retry:hover {
+  color: var(--text-primary);
 }
 
 .conversations__head {

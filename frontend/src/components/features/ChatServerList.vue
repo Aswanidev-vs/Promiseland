@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import ChatIcon from './ChatIcon.vue'
 import { plural } from './format'
@@ -39,29 +38,14 @@ function statusFor(server: ChatServer): string {
 
     <SkeletonList v-if="loading" :rows="4" />
 
-    <EmptyState
-      v-else-if="forbidden"
-      title="Servers are not available"
-      description="Your session may have expired. Sign in again to see your servers."
-      action-label="Try again"
-      @action="emit('retry')"
-    />
+    <div v-else-if="forbidden || error" class="servers__empty" role="alert">
+      <p>{{ error || 'Servers are not available. Your session may have expired.' }}</p>
+      <button type="button" class="servers__retry" @click="emit('retry')">Try again</button>
+    </div>
 
-    <EmptyState
-      v-else-if="error"
-      title="We could not load servers"
-      :description="error"
-      action-label="Try again"
-      @action="emit('retry')"
-    />
-
-    <EmptyState
-      v-else-if="!servers.length"
-      title="No servers yet"
-      description="Create a server to gather a channel for your community."
-      action-label="Create a server"
-      @action="emit('create')"
-    />
+    <p v-else-if="!servers.length" class="servers__empty">
+      No servers yet. Use the plus button to start one for your community.
+    </p>
 
     <ul v-else class="servers__list">
       <li v-for="server in servers" :key="server.id">
@@ -192,6 +176,30 @@ function statusFor(server: ChatServer): string {
 .servers__role {
   color: var(--text-muted);
   font-size: var(--text-xs);
+}
+
+.servers__empty {
+  padding: var(--space-3) var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.servers__retry {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tide);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.servers__retry:hover {
+  color: var(--text-primary);
 }
 
 @media (max-width: 480px) {

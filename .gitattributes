@@ -1,0 +1,14 @@
+# Line-ending policy.
+#
+# The index always stores LF. Container files and scripts additionally require
+# LF in the working tree: a Dockerfile that writes a script through a heredoc
+# passes its own bytes through, so on a CRLF checkout the generated shebang
+# becomes "#!/bin/sh\r" and the container dies with
+# "exec /usr/local/bin/entrypoint.sh: no such file or directory".
+* text=auto
+
+Dockerfile        text eol=lf
+*.Dockerfile      text eol=lf
+*.sh              text eol=lf
+*.yml             text eol=lf
+*.yaml            text eol=lf

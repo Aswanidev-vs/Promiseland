@@ -7,7 +7,6 @@ import BaseCard from '@/components/ui/BaseCard.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import TagChip from '@/components/ui/TagChip.vue'
-import WayfinderMark from '@/components/ui/WayfinderMark.vue'
 import EventCommentThread from '@/components/features/EventCommentThread.vue'
 import RsvpControl from '@/components/features/RsvpControl.vue'
 import TeamUpCard from '@/components/features/TeamUpCard.vue'
@@ -253,7 +252,7 @@ watch(id, load)
       <article class="plaque">
         <div class="plaque__media">
           <img v-if="event.cover_url" :src="event.cover_url" :alt="event.title" />
-          <WayfinderMark v-else detailed size="200px" />
+          <img v-else class="brand-mark plaque__mark" src="/logo.png" alt="" style="--mark-size: 120px" />
         </div>
 
         <div class="plaque__main">
@@ -302,7 +301,7 @@ watch(id, load)
         </div>
 
         <div class="plaque__stub">
-          <WayfinderMark size="36px" />
+          <img class="brand-mark" src="/logo.png" alt="" style="--mark-size: 36px" />
           <span class="plaque__stub-text mono">Harbour gathering</span>
           <span class="plaque__stub-id mono">#{{ event.id }}</span>
         </div>

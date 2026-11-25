@@ -54,9 +54,9 @@
   --stagger-step: 40ms;
 
   /* Layout */
-  --canvas-max: 1280px;
+  --canvas-max: 1440px;
   --sidebar-w: 240px;
-  --rail-w: 280px;
+  --rail-w: 320px;
   --main-max: 720px;
   --layout-gap: 24px;
   --topbar-h: 64px;

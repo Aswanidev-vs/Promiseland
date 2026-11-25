@@ -9,25 +9,23 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"path/filepath"
 	"testing"
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/db"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
+	"github.com/Aswanidev-vs/promiseland/backend/internal/testutil"
 )
 
 // Deps opens a fresh migrated database in a temporary directory.
 func Deps(t testing.TB) *shared.Deps {
 	t.Helper()
-	database, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("open test database: %v", err)
-	}
+	// TempDB closes the pool and retries directory removal: SQLite can still
+	// hold its WAL sidecar open for a moment after Close, and t.TempDir's
+	// removal fails the test on Windows when that happens.
+	database, _ := testutil.TempDB(t, "test.db")
 	if err := db.Migrate(database, nil); err != nil {
-		_ = database.Close()
 		t.Fatalf("migrate test database: %v", err)
 	}
-	t.Cleanup(func() { _ = database.Close() })
 	return &shared.Deps{
 		DB:  database,
 		Log: slog.New(slog.NewTextHandler(io.Discard, nil)),

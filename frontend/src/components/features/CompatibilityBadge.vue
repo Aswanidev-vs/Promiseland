@@ -20,14 +20,17 @@ const activeGroups = computed(() =>
   groups.filter((group) => (props.shared?.[group.key]?.length ?? 0) > 0),
 )
 
-const countLabel = computed(() => {
-  const count = props.sharedCount ?? 0
-  return `${count} ${count === 1 ? 'thing' : 'things'}`
-})
+const count = computed(() => props.sharedCount ?? 0)
+const hasShared = computed(() => activeGroups.value.length > 0 || count.value > 0)
+const countLabel = computed(() => `${count.value} ${count.value === 1 ? 'thing' : 'things'}`)
 </script>
 
 <template>
-  <section class="compat" aria-label="Why you are seeing this person">
+  <!-- With nothing in common the panel would be an empty box. Say it in one line
+       when there is an explanation; otherwise say nothing at all. -->
+  <p v-if="!hasShared && explanation" class="compat__none">{{ explanation }}</p>
+
+  <section v-else-if="hasShared" class="compat" aria-label="Why you are seeing this person">
     <div class="compat__head">
       <span class="compat__marker" aria-hidden="true" />
       <span class="compat__label">In common</span>
@@ -59,6 +62,12 @@ const countLabel = computed(() => {
   border-left: 2px solid var(--ink-600);
   border-radius: var(--radius-md);
   background: var(--ink-850);
+}
+
+.compat__none {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
 }
 
 .compat__head {

@@ -1,3 +1,15 @@
+<script lang="ts">
+// Module scope on purpose: one counter per module keeps generated ids unique
+// across instances. A counter inside <script setup> resets per instance, which
+// gives every field the same id and makes labels point at the wrong control.
+let sequence = 0
+
+function nextId(prefix: string): string {
+  sequence += 1
+  return `${prefix}-${sequence}`
+}
+</script>
+
 <script setup lang="ts">
 const props = defineProps<{
   modelValue: boolean
@@ -6,8 +18,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
-let sequence = 0
-const uid = `discoverability-${++sequence}`
+const uid = nextId('discoverability')
 const labelId = `${uid}-label`
 const hintId = `${uid}-hint`
 

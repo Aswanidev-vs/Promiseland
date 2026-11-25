@@ -26,7 +26,8 @@ const (
 const userColumns = `
 	SELECT u.id, u.email, u.username, u.display_name,
 	       p.avatar_url, p.banner_url, p.bio, p.location,
-	       COALESCE(p.visibility, 'public'), u.discoverable, u.created_at
+	       COALESCE(p.visibility, 'public'), u.discoverable, u.created_at,
+	       EXISTS(SELECT 1 FROM platform_moderators pm WHERE pm.user_id = u.id)
 	FROM users u
 	LEFT JOIN user_profiles p ON p.user_id = u.id`
 
@@ -84,7 +85,7 @@ func (s *service) userByID(ctx context.Context, id int64) (User, error) {
 	err := s.d.DB.QueryRowContext(ctx, userColumns+` WHERE u.id = ?`, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.DisplayName,
 		&avatar, &banner, &bio, &location,
-		&user.Visibility, &user.Discoverable, &user.CreatedAt,
+		&user.Visibility, &user.Discoverable, &user.CreatedAt, &user.IsStaff,
 	)
 	if err != nil {
 		return User{}, err

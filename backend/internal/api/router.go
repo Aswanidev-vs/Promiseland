@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Aswanidev-vs/promiseland/backend/internal/admin"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/adult"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/anime"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/auth"
@@ -97,6 +98,9 @@ func New(d *shared.Deps) http.Handler {
 		teamups.RegisterProtected(protected, d)
 		chat.RegisterProtected(protected, d)
 		discovery.RegisterProtected(protected, d)
+		// Staff console: mounted on the authenticated router; the module gates
+		// each route on a platform staff grant.
+		admin.Register(protected, d)
 
 		r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 			shared.WriteError(w, http.StatusNotFound, shared.CodeNotFound, "Endpoint not found.")

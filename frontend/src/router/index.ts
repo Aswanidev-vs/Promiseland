@@ -61,6 +61,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Community', requiresAuth: true },
   },
   {
+    path: '/communities/:slug/manage',
+    name: 'community-manage',
+    component: () => import('@/views/CommunityManageView.vue'),
+    meta: { title: 'Manage community', requiresAuth: true },
+  },
+  {
     path: '/posts/new',
     name: 'create-post',
     component: () => import('@/views/CreatePostView.vue'),
@@ -95,6 +101,12 @@ export const routes: RouteRecordRaw[] = [
     name: 'settings',
     component: () => import('@/views/SettingsView.vue'),
     meta: { title: 'Settings', requiresAuth: true },
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/AdminView.vue'),
+    meta: { title: 'Admin', requiresAuth: true },
   },
   {
     path: '/moderation',
@@ -243,7 +255,10 @@ router.beforeEach(async (to) => {
   }
 
   const auth = useAuthStore()
-  if (to.meta.requiresAuth || to.meta.guestOnly) await auth.ensureLoaded()
+  if (to.meta.requiresAuth || to.meta.guestOnly || to.name === 'landing') await auth.ensureLoaded()
+
+  // The landing explains the product; with a session the feed is home.
+  if (to.name === 'landing' && auth.isAuthenticated) return { name: 'home' }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }

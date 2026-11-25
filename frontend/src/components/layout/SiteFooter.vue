@@ -10,6 +10,8 @@ const guest = useGuestStore()
 
 const year = new Date().getFullYear()
 
+const homeTo = computed(() => (auth.isAuthenticated ? '/home' : '/'))
+
 const accountLinks = computed(() =>
   auth.isAuthenticated
     ? [
@@ -32,7 +34,7 @@ function browseAsGuest(): void {
   <footer class="footer">
     <div class="footer__grid">
       <div class="footer__brand">
-        <RouterLink to="/" class="footer__brand-link" aria-label="PromisedLand home">
+        <RouterLink :to="homeTo" class="footer__brand-link" aria-label="PromisedLand home">
           <img class="footer__logo" src="/logo.png" alt="" />
         </RouterLink>
         <p class="footer__tagline">Your fandom. Your people. Your place.</p>

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { verifyEmail } from './auth'
-import { getFeed, uploadMedia, votePost } from './posts'
+import { joinCommunity } from './communities'
+import { uploadMedia } from './media'
+import { getFeed, votePost } from './posts'
 import { search } from './search'
 import { updateAnimeInterests } from './users'
 
@@ -89,5 +91,20 @@ describe('R1 endpoint wiring', () => {
     await votePost(4, 1)
     expect(lastCall()[0]).toBe('/api/v1/posts/4/reactions')
     expect(JSON.parse(lastCall()[1].body as string)).toEqual({ vote: 1 })
+  })
+})
+
+describe('community membership contract', () => {
+  it('joins at /join, matching the API route', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await joinCommunity('cosplay craft')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/communities/cosplay%20craft/join',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    vi.unstubAllGlobals()
   })
 })

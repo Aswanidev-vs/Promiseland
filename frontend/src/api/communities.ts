@@ -35,7 +35,8 @@ export async function updateCommunity(
 }
 
 export async function joinCommunity(slug: string): Promise<void> {
-  await request<void>(`/communities/${encodeURIComponent(slug)}/membership`, { method: 'POST' })
+  // The API joins at POST /join and leaves at DELETE /membership.
+  await request<void>(`/communities/${encodeURIComponent(slug)}/join`, { method: 'POST' })
 }
 
 export async function leaveCommunity(slug: string): Promise<void> {
@@ -62,6 +63,16 @@ export async function listCommunityPosts(
   return request<Page<Post>>(
     `/communities/${encodeURIComponent(slug)}/posts${buildQuery({ ...p })}`,
   )
+}
+
+export async function addRule(
+  slug: string,
+  rule: { title: string; body: string },
+): Promise<CommunityRule> {
+  return request<CommunityRule>(`/communities/${encodeURIComponent(slug)}/rules`, {
+    method: 'POST',
+    body: JSON.stringify(rule),
+  })
 }
 
 export async function addModerator(slug: string, userId: number): Promise<void> {

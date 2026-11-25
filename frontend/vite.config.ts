@@ -58,6 +58,12 @@ export default defineConfig({
         changeOrigin: true,
         configure: apiProxyErrors('/api'),
       },
+      // Uploads are served by the API at /media, outside /api.
+      '/media': {
+        target: API_TARGET,
+        changeOrigin: true,
+        configure: apiProxyErrors('/media'),
+      },
       '/healthz': {
         target: API_TARGET,
         changeOrigin: true,

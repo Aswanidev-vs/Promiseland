@@ -108,6 +108,15 @@ a:hover {
   color: var(--text-primary);
 }
 
+/* The brand mark stands in wherever an empty state or media placeholder needs
+   an image. Size it per place with --mark-size. */
+.brand-mark {
+  width: var(--mark-size, 72px);
+  height: var(--mark-size, 72px);
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
 /* Monospaced figures and coordinates */
 .mono,
 time {

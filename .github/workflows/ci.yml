@@ -1,12 +1,21 @@
 name: CI
 
-# Release 0 foundation: checks only. Image publishing to ECR and EC2
-# deployment are intentionally deferred to a later release (PRD §11.3).
+# Pull-request and main-branch gate for PRD §11.3 items 1-5: formatting, static
+# analysis, unit and integration tests, the production build, all three container
+# images, and dependency/image scanning. Items 6-9 (publish to ECR, deploy to
+# EC2, post-deploy health check, keep a rollback tag) need a registry and an
+# OIDC deploy role this repository does not have yet, so they are absent rather
+# than stubbed out.
 
 on:
   push:
     branches: [main]
   pull_request:
+
+# A new push to the same ref cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -19,61 +28,193 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: actions/setup-go@v6
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
-          go-version: "1.27"
-          cache: true
+          # go.mod pins the exact toolchain, so there is one place to bump.
+          go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
       - name: Check formatting
         run: |
           unformatted="$(gofmt -l .)"
           if [ -n "$unformatted" ]; then
-            echo "Run gofmt on these files:"
+            echo "::error::gofmt these files"
             echo "$unformatted"
             exit 1
           fi
 
-      - name: Test
-        run: go test ./...
-
       - name: Vet
         run: go vet ./...
+
+      # The race detector is part of the gate: realtime/WebSocket code and the
+      # SQLite pools are the parts most likely to regress silently.
+      - name: Test
+        run: go test -race ./...
 
       - name: Build
         run: go build ./...
 
+      - name: Scan for reachable vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+
   frontend:
-    name: Frontend (Vue 3 + Bun)
+    name: Frontend (Vue + Bun)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: "1.4.4"
 
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Build
+      # `build` is `vue-tsc --noEmit && vite build`, so this is the type check
+      # and the production build in one step.
+      - name: Type check and build
         run: bun run build
 
-      # The `test` script runs vitest (see frontend/package.json).
-      # Bun's built-in `bun test` runner is not compatible with these tests.
+      # The `test` script runs vitest. Bun's built-in `bun test` runner is not
+      # compatible with these SFC tests.
       - name: Test
         run: bun run test
+
+      # The two ignored advisories are dev-only (tinypool behind vitest 3) and
+      # have no fix inside that major; vitest 4 clears them but breaks 16 test
+      # files, so the upgrade is tracked separately. Everything else — including
+      # every production dependency — must be clean.
+      - name: Scan dependency advisories
+        run: |
+          bun audit --audit-level=high \
+            --ignore=GHSA-5gmw-xhrv-c9v3 \
+            --ignore=GHSA-85c8-ppgw-ccpr
+
+  images:
+    name: Images (build, scan, smoke test)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    env:
+      # Pinned by digest so the scanner cannot be swapped under us.
+      TRIVY: aquasec/trivy:0.76.2@sha256:6fa071ef8daa2e58b90cbf1710bedca91adbb3bf98693533226f442035b836a6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Build the API image
+        run: docker build --tag promisedland-api:ci backend
+
+      - name: Build the web image
+        run: docker build --tag promisedland-web:ci frontend
+
+      # Context is the repository root: the edge image builds the SPA itself.
+      - name: Build the edge image
+        run: docker build --tag promisedland-edge:ci .
+
+      # Only fixable findings block: an unfixed base-image CVE is not something
+      # a pull request can act on, and gating on it just teaches people to
+      # ignore the red run.
+      - name: Scan the API image
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY" \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 promisedland-api:ci
+
+      - name: Scan the web image
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY" \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 promisedland-web:ci
+
+      - name: Scan the edge image
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY" \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 promisedland-edge:ci
+
+      # Builds prove the images exist; this proves they start, that the API
+      # migrates its database, that the web image renders its nginx config and
+      # reaches the API, and that the edge image — the one compose actually runs
+      # in production — serves the SPA and reaches the API by the upstream name
+      # baked into its config. A broken entrypoint only shows up here.
+      - name: Smoke test the stack
+        run: |
+          set -eu
+          cleanup() {
+            docker rm -f api web edge >/dev/null 2>&1 || true
+            docker volume rm smoke-data >/dev/null 2>&1 || true
+            docker network rm smoke >/dev/null 2>&1 || true
+          }
+          # Also covers a failed run: the trap fires on the error exit too.
+          trap cleanup EXIT
+          docker network create smoke
+          docker run -d --name api --network smoke -v smoke-data:/data \
+            -e DATABASE_PATH=/data/promisedland.db \
+            -e MEDIA_PATH=/data/media \
+            -e SESSION_SECRET=ci-smoke-only \
+            promisedland-api:ci
+          docker run -d --name web --network smoke -p 8080:80 \
+            -e API_UPSTREAM=http://api:8080 \
+            promisedland-web:ci
+          # The edge config hardcodes `proxy_pass http://api:8080`, so the API
+          # container name above is the whole upstream contract. 8098 avoids the
+          # 8080/5173 dev-server ports.
+          docker run -d --name edge --network smoke -p 8098:80 \
+            promisedland-edge:ci
+
+          # The API needs a moment to migrate SQLite before either proxy can
+          # answer, so both checks retry instead of racing it.
+          wait_healthy() {
+            for _ in $(seq 1 30); do
+              if curl -fsS "http://localhost:$1/healthz" | grep -q '"status":"ok"'; then
+                return 0
+              fi
+              sleep 2
+            done
+            return 1
+          }
+          dump_logs() {
+            docker logs api || true
+            docker logs web || true
+            docker logs edge || true
+          }
+
+          if ! wait_healthy 8080; then
+            echo "::error::the web image never answered /healthz with a ready API"
+            dump_logs
+            exit 1
+          fi
+          echo "web image reaches the API"
+
+          if ! wait_healthy 8098; then
+            echo "::error::the edge image never answered /healthz with a ready API"
+            dump_logs
+            exit 1
+          fi
+          # / proves the SPA is served, /api/... proves the proxy path, and the
+          # uid check proves the unprivileged base image is still unprivileged.
+          curl -fsS -o /dev/null -w 'edge / -> %{http_code} %{content_type}\n' \
+            http://localhost:8098/ | grep -q '^edge / -> 200 text/html'
+          curl -fsS 'http://localhost:8098/api/v1/communities?limit=2' \
+            | grep -q '"items"'
+          test "$(docker exec edge id -u)" = 101
+          echo "edge image serves the SPA, proxies /api and /healthz, runs as UID 101"
 
   compose:
     name: Compose configuration
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Validate compose file
         run: docker compose config -q

@@ -51,27 +51,39 @@ Managed through `.env` (never committed) and injected by Compose. See `.env.exam
 
 SQLite runs in WAL mode, so a backup is **not** a copy of the `.db` file alone: include the `-wal` and `-shm` sidecars, or use SQLite's online backup API, which produces a single consistent file.
 
-**Backup (target procedure; test before launch):**
+**Backup (scripted; `deploy/backup/backup.sh`):**
 
-1. Confirm the API is up and writes are idle: `curl -fsS localhost:8080/readyz`.
-2. Run SQLite's online backup against the mounted data path. On the host with `sqlite3` installed and the EBS path mounted at `/srv/promisedland/data`:
-   ```bash
-   sqlite3 /srv/promisedland/data/promisedland.db \
-     ".backup '/srv/promisedland/backups/promisedland-$(date +%F).db'"
-   ```
-   Locally the same can be done through a one-off container mounting `promisedland-data`.
-3. Store the resulting file off-instance (e.g. encrypted S3 with lifecycle rules) and verify the object exists. Do not keep the only backup on the same EBS volume.
-4. Record the backup time, source image tag and migration version in the operations log.
+`deploy/backup/backup.sh <destination-dir>` takes one required argument and reads these environment variables:
+
+- `DATA_DIR` (default `/srv/promisedland/data`) — the mounted data path.
+- `DB_NAME` (default `promisedland.db`), `MEDIA_SUBDIR` (default `media`).
+- `KEEP_DAYS` (default `14`) — retention; only files matching `promisedland-*.db.gz` / `promisedland-media-*.tar.gz` older than this are removed.
+- `S3_BUCKET` (optional) — when set, each artifact is copied to `s3://$S3_BUCKET/$S3_PREFIX/...` with the `aws` CLI; when unset the script says so plainly instead of pretending.
+- `S3_PREFIX` (default `promisedland`).
+
+What it does, in order: checks for `sqlite3` and `tar`; refuses to run if the destination resolves inside the data directory; snapshots the live database with SQLite's online backup API (`sqlite3 <db> ".backup '<tmp>'"`, which stays consistent in WAL mode — a plain file copy does not), runs `PRAGMA integrity_check`, then gzips it to `promisedland-<UTC stamp>.db.gz`; tars the media directory when it exists (a fresh install has none yet, reported rather than fatal); optionally copies to S3; then applies retention. A `trap` removes the temporary snapshot on any failure. The script needs only a POSIX shell plus `sqlite3` and `tar` — it is **not** baked into the API image, which stays lean.
+
+Example on the host:
+
+```bash
+DATA_DIR=/srv/promisedland/data KEEP_DAYS=30 S3_BUCKET=promisedland-backups   deploy/backup/backup.sh /srv/promisedland/backups
+```
+
+Cron (daily, 03:17 UTC, as the instance user that owns the data path):
+
+```cron
+17 3 * * * /opt/promisedland/deploy/backup/backup.sh /srv/promisedland/backups >> /var/log/promisedland-backup.log 2>&1
+```
 
 **Restore (target procedure; test before launch):**
 
 1. Stop the API: `docker compose -f docker-compose.yml -f deploy/compose/prod.yml stop api`.
 2. Move the current database and its sidecars aside (`promisedland.db`, `promisedland.db-wal`, `promisedland.db-shm`) rather than deleting them.
-3. Copy the chosen backup into `/srv/promisedland/data/promisedland.db`. Ensure no stale `-wal`/`-shm` files remain next to it; SQLite will recreate them.
+3. Gunzip the chosen backup into `/srv/promisedland/data/promisedland.db`. Ensure no stale `-wal`/`-shm` files remain next to it; SQLite will recreate them. Restore media from `promisedland-media-*.tar.gz` into `/srv/promisedland/data/media`.
 4. Start the API and verify `healthz`/`readyz`, then spot-check critical reads.
 5. Only after verification, remove the moved-aside files.
 
-Never restore a backup taken before a migration into a newer schema without a tested migration path; pair the database snapshot with the image tag that produced it.
+Never restore a backup taken before a migration into a newer schema without a tested migration path; pair the database snapshot with the image tag that produced it. The restore procedure above has been written but **not yet exercised** — run it once against a scratch volume before relying on it.
 
 ## Deployment and rollback (target)
 
@@ -87,9 +99,9 @@ Never restore a backup taken before a migration into a newer schema without a te
 | Compose config validates with no `.env` | Verified in R0 |
 | YAML/security-header files reviewed by inspection | Verified in R0 |
 | No secret values committed | Verified in R0 |
-| Both images build from a clean checkout | To test before launch |
-| `api` + `web` start; frontend reaches backend | To test before launch |
-| `healthz` / `readyz` return healthy | To test before launch |
+| All three images (api, web, edge) build from a clean checkout | Verified in CI (R0+) |
+| `api` + `web` start; frontend reaches backend | Verified in CI (R0+) |
+| `healthz` / `readyz` return healthy | Verified in CI (R0+) |
 | Recreate API container and confirm data persists | To test before launch |
 | EC2 reboot recovery, HTTPS, SG exposure | To test before launch |
 | Backup + restore to a clean environment | To test before launch |

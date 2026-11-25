@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import { getMe } from '@/api/auth'
@@ -57,6 +58,30 @@ async function load(): Promise<void> {
   }
 }
 
+async function onAvatarChange(value: string | null): Promise<void> {
+  const previous = form.avatarUrl
+  form.avatarUrl = value ?? ''
+
+  // Adding an image waits for "Save profile"; removing one takes effect
+  // immediately, because that is what the button promises.
+  if (value !== null || !previous) return
+
+  try {
+    // The API reads an empty string as "clear it"; a JSON null means "unchanged".
+    await updateMe({ avatar_url: '' })
+    await auth.fetchMe()
+    notice.value = 'Profile photo removed.'
+    ui.pushToast({ title: 'Profile photo removed', tone: 'success' })
+  } catch (cause) {
+    form.avatarUrl = previous
+    ui.pushToast({
+      title: 'Could not remove the photo',
+      message: errorMessage(cause, 'Try again in a moment.'),
+      tone: 'error',
+    })
+  }
+}
+
 async function saveProfile(): Promise<void> {
   if (!form.displayName.trim()) {
     error.value = 'Enter the name people will see.'
@@ -71,7 +96,8 @@ async function saveProfile(): Promise<void> {
       display_name: form.displayName.trim(),
       bio: form.bio.trim(),
       location: form.location.trim(),
-      avatar_url: form.avatarUrl.trim() || null,
+      // Empty string clears the stored image; null would leave it untouched.
+      avatar_url: form.avatarUrl.trim(),
     } as unknown as Parameters<typeof updateMe>[0]
     await updateMe(patch)
     await auth.fetchMe()
@@ -142,7 +168,22 @@ onMounted(load)
         <h2 class="settings__heading">Profile</h2>
         <form class="settings__form" novalidate @submit.prevent="saveProfile">
           <BaseInput v-model="form.displayName" label="Display name" />
-          <BaseInput v-model="form.avatarUrl" label="Avatar URL" type="url" placeholder="https://" />
+
+          <ImageUploader
+            :model-value="form.avatarUrl || null"
+            label="Profile photo"
+            shape="circle"
+            :size="96"
+            hint="JPEG, PNG, GIF or WebP, up to 5 MB. Adding a photo is saved with the profile."
+            @update:model-value="onAvatarChange"
+          />
+
+          <BaseInput
+            v-model="form.avatarUrl"
+            label="Or paste an image link"
+            type="url"
+            placeholder="https://"
+          />
           <BaseInput v-model="form.location" label="Location" hint="City or region is optional." />
           <div class="settings__field">
             <label class="settings__label" for="settings-bio">Bio</label>

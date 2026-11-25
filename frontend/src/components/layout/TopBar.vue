@@ -17,6 +17,8 @@ const notifications = useNotificationsStore()
 const guest = useGuestStore()
 
 const query = ref('')
+const homeTo = computed(() => (auth.isAuthenticated ? '/home' : '/'))
+
 const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
@@ -63,7 +65,7 @@ function submitSearch(): void {
   <div class="topbar">
     <!-- Brand only lives here on mobile; the sidebar owns it above 768. -->
     <div class="topbar__start">
-      <RouterLink to="/" class="topbar__brand" aria-label="PromisedLand home">
+      <RouterLink :to="homeTo" class="topbar__brand" aria-label="PromisedLand home">
         <img class="topbar__logo" src="/logo.png" alt="PromisedLand logo" width="26" height="26" />
         <span class="topbar__wordmark u-wordmark">Promised<span class="topbar__accent">Land</span></span>
       </RouterLink>

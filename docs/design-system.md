@@ -162,6 +162,14 @@ Exact states. If a component deviates, the component is wrong, not the recipe.
 padding 4/10. Selected/active: `--ember-soft` bg, `--ember` text + 1px ember border. Topic tags are
 pills; anime-title tags may use mono (catalogue feel). Max one chip row per card; wrap, never scroll.
 
+**Image upload** (`ImageUploader.vue`) — preview plus Upload/Replace and Remove; 44px controls;
+JPEG/PNG/GIF/WebP up to 5 MB, validated client-side before the request; drag-and-drop is optional
+sugar over the same picker; errors sit under the controls. Removing a stored image persists
+immediately (the API clears with an empty string, not null), while adding one waits for the
+surrounding form's Save. It is a container query, not a viewport one: the preview and controls
+stack whenever its own width drops below 420px, so the same component works in a rail card and in
+a full-width settings form, and a wide (banner) preview always sits above its controls.
+
 **Avatar** — circle; fallback initials in Fraunces 560 on `--ink-700`, `--text-secondary`.
 Sizes 28/40/56/96 (profile 96, feed 40, chat 28). No colored rings except verified/organizer
 states, which use `--ember` 2px.
@@ -185,8 +193,9 @@ close button is a ghost icon button with `title`.
 **Skeleton** — `--skeleton-bar` on `--ink-700`, breathing opacity (existing primitive). Same
 shape as the content it replaces; no centered spinner for full pages.
 
-**Empty state** — WayfinderMark (small, 48–72px) + one sentence telling what will appear here +
-one primary action. No emoji, no "Nothing here yet 👋".
+**Empty state** — a compact block, not a card: brand mark (56px), a title at `--text-xl`, one sentence, one
+action, capped at 52ch and left-aligned in the column. It never stretches to fill the space it sits in; the
+frame around it (header, tabs, rails) is what makes the page look finished. No emoji, no "Nothing here yet 👋".
 
 **Spoiler shield** (`SpoilerShield.vue`) — content obscured with `backdrop-filter: blur(10px)` +
 `--ink-900` 70% wash; label "Spoilers — tap to reveal" in mono `--text-sm`; reveal is an explicit
@@ -196,6 +205,9 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 ## 4. Layout & shell
 
+- **Structural breakpoints:** `useBreakpoint()` (mobile < 768, tablet 768–1023, desktop ≥ 1024) decides
+  structure that CSS cannot express, such as how many panes a screen renders. Sizes and spacing stay in
+  media queries; do not duplicate a breakpoint value in both places.
 - **Desktop ≥1024:** sidebar 240 (bg `--ink-850`, right hairline) + main column max 720 +
   right rail 280, gap 24, canvas max 1280, centered. Top bar 64 (page bg, bottom hairline,
   search field max 480 centered).
@@ -211,9 +223,9 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 ## 5. Signature moments (the brand fixes)
 
-1. **Wayfinder constellation** (`WayfinderMark.vue`): logo in sidebar/topbar (24–28px), hero
-   (large, with the plotted grid frame), empty states (small), 404. It represents the interest
-   graph — a star chart of what you love — so it may also appear in the profile bearing panel.
+1. **The brand mark** (`/logo.png`, from `assets/brand/logo.png`): wordmark in sidebar/topbar,
+   stamp in empty states and media placeholders. The star-chart idea now lives in the landing's
+   live interest map, not in a separate compass glyph.
 2. **Profile bearing panel:** a compact star-chart strip under the profile header plotting the
    user's favourite titles as labeled stars connected by hairlines (pure SVG/CSS from data).
    This is the "your graph is real" proof moment on the most personal screen.
@@ -238,11 +250,19 @@ button; after reveal, a quiet "Hide again" text action stays.
   every sample surface says so in its caption.
 - **Home feed:** tabs (Following / For You) with ember underline; composer well sunken at top;
   posts as cards, media with nested radius; action row muted until active (ember like, tide
-  nothing). Skeleton rows match card shape.
+  nothing). Skeleton rows match card shape. An empty feed is not a bigger placeholder: the compact
+  empty block, then "Communities to start with" — three real communities the reader has not joined,
+  each joinable in place. From 1280px the shell (1440 canvas) adds a 320
+  rail beside a feed that grows to 720 once the canvas allows it, with hairline-separated sections fed by real public endpoints: Home shows upcoming events plus
+  creators, Communities shows communities plus events, Events shows creators plus communities,
+  Discover shows events plus creators, Notifications has none. The rail only mounts where it is
+  visible, so phones and tablets make no extra requests.
 - **Communities (list):** search + topic chips row; list rows (not a card grid) with icon, name,
   mono member count, one-line description, join action right-aligned. Filter chips use the chip
   recipe; "Joined" state uses `--ok`.
-- **Community detail:** banner strip (ink-700 + wayfinder coordinate tag), name in Fraunces,
+- **Community detail:** banner strip (ink-700 + a coordinate tag), name in Fraunces; staff see one quiet
+  "Moderator tools" card in the rail that links to the manage page rather than holding forms in a 320px
+  column;
    rules in a sunken well, posts reuse the feed card exactly.
 - **Post detail:** same card, comments nested with a hairline thread line (indent 24/level,
   max depth 3), reply composer sunken. Spoiler blocks per recipe.
@@ -274,6 +294,21 @@ button; after reveal, a quiet "Hide again" text action stays.
   browser can observe: overall state as a dot plus words (never colour alone), one row per probe with latency
   and HTTP status, a "check again every 15 seconds" toggle that pauses while the tab is hidden, and a strip of
   the checks made since the page opened. No uptime percentages or historical claims the data cannot support.
+- **Chat home:** two panes from 768px up — one list panel holding Servers over Conversations with a hairline
+  between, and a detail pane whose empty state uses the brand mark; below 768 it becomes
+  two tabs over a single list. Structure follows `useBreakpoint()`; widths follow media queries.
+- **Community manage (`/communities/:slug/manage`):** the staff surface — Details (name, description,
+  visibility), Appearance (icon and banner uploads that persist on pick), Rules (current list plus an add
+  form) and Moderators (add by member ID). Owners and moderators only; everyone else gets the compact
+  forbidden block. Forms sit in cards, the rail is absent.
+- **Admin console (`/admin`, staff only):** tabs for Overview, Users, Posts, Communities and Events.
+  Overview is a dense grid of counts (label at `--text-xs`, figure at `--text-xl`, `tabular-nums`) over
+  three hairline lists. Tables are dense and scannable — hairline rows, mono figures, state as words
+  ("Active"/"Suspended", never colour alone) — and scroll horizontally inside their own container rather
+  than pushing the page. Ordinary accounts get the compact forbidden block and never call the API.
+- **Settings (profile):** the shared image uploader with a circular preview, the file name and pixel size
+  after a pick, and a quiet Remove that clears the stored image at once; the paste-a-link field stays below
+  as the alternative.
 - **Footer (`SiteFooter`):** brand column, Explore, Account, Legal, and a working small print row.
   Every link resolves to a real route; no `#` placeholders, no social icons for accounts we do not
   run. Reused on the landing, legal and error pages.
@@ -284,7 +319,7 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 - User-generated media is the imagery — never stock, never random anime screenshots, never
   AI-generated franchise characters. Where media is absent, build the visual in SVG/CSS
-  (wayfinder, grids, stamps) — never grey placeholder boxes, never emoji as icons.
+  (the brand mark, grids, stamps) — never grey placeholder boxes, never emoji as icons.
 - One icon set, one stroke weight (existing `AppIcon`), 16/20/24 sizes only.
 - Media in cards: `object-fit: cover`, explicit aspect-ratio (4:3 feed, 3:4 event posters,
   16:9 banners) to prevent layout shift.
