@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
+import ImageUploader from '@/components/ui/ImageUploader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { createEvent } from '@/api/events'
 import { useUiStore } from '@/stores/ui'
@@ -23,13 +24,17 @@ const city = ref('')
 const country = ref('')
 const isOnline = ref(false)
 const capacity = ref('')
-const coverMediaId = ref('')
+const cover = ref<{ id: number; url: string } | null>(null)
 const publishing = ref(false)
 const error = ref('')
 const forbidden = ref(false)
 const fieldErrors = ref<Record<string, string>>({})
 
 const canPublish = computed(() => !publishing.value)
+
+function clearCover(value: string | null): void {
+  if (value === null) cover.value = null
+}
 
 function validate(): boolean {
   const next: Record<string, string> = {}
@@ -43,9 +48,6 @@ function validate(): boolean {
   if (!timezone.value.trim()) next.timezone = 'Add a timezone, for example Europe/London.'
   if (capacity.value && (!Number.isInteger(Number(capacity.value)) || Number(capacity.value) < 0)) {
     next.capacity = 'Use a whole number of 0 or more. Leave empty for no limit.'
-  }
-  if (coverMediaId.value && (!Number.isInteger(Number(coverMediaId.value)) || Number(coverMediaId.value) <= 0)) {
-    next.coverMediaId = 'Use the numeric ID of an uploaded image.'
   }
   fieldErrors.value = next
   return Object.keys(next).length === 0
@@ -69,7 +71,7 @@ async function publish(): Promise<void> {
       country: country.value.trim(),
       isOnline: isOnline.value,
       ...(capacity.value ? { capacity: Number(capacity.value) } : {}),
-      ...(coverMediaId.value ? { coverMediaId: Number(coverMediaId.value) } : {}),
+      ...(cover.value ? { coverMediaId: cover.value.id } : {}),
     } as unknown as Parameters<typeof createEvent>[0])
     ui.pushToast({ title: 'Event created', tone: 'success' })
     await router.push(`/events/${created.id}`)
@@ -158,13 +160,13 @@ async function publish(): Promise<void> {
           hint="Leave empty for no limit."
           :error="fieldErrors.capacity"
         />
-        <BaseInput
-          v-model="coverMediaId"
-          label="Cover media ID"
-          type="number"
-          min="1"
-          hint="The ID of an uploaded image, if you have one."
-          :error="fieldErrors.coverMediaId"
+        <ImageUploader
+          :model-value="cover?.url ?? null"
+          label="Cover image"
+          shape="wide"
+          hint="Optional. JPEG, PNG, GIF or WebP up to 5 MB."
+          @uploaded="cover = { id: $event.id, url: $event.url }"
+          @update:model-value="clearCover"
         />
       </div>
 

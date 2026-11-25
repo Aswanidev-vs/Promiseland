@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { uploadMedia } from '@/api/media'
 import { errorMessage } from '@/components/features/format'
+import type { Media } from '@/types'
 
 const props = withDefaults(
   defineProps<{
@@ -17,7 +18,11 @@ const props = withDefaults(
   { hint: '', shape: 'card', size: 96, disabled: false },
 )
 
-const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string | null]
+  /** The uploaded record, for callers that store the id rather than the URL. */
+  uploaded: [media: Media]
+}>()
 
 const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const maxBytes = 5 * 1024 * 1024
@@ -67,6 +72,7 @@ async function accept(file: File | null | undefined): Promise<void> {
     pickedName.value = file.name
     pickedSize.value = `${media.width} × ${media.height}`
     emit('update:modelValue', media.url)
+    emit('uploaded', media)
   } catch (cause) {
     fail(errorMessage(cause, 'We could not upload that image. Try again.'))
   } finally {
