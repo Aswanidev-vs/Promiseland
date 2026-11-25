@@ -101,6 +101,7 @@ sign-in, and the navigation shows only public destinations.
 | `/search`, `/discover`, `/connections` | Search, discovery, connections | Account |
 | `/chat`, `/chat/servers/:id`, `/chat/conversations/:id` | Chat | Account |
 | `/notifications`, `/settings`, `/team-ups`, `/moderation` | Account surfaces | Account |
+| `/admin` | Staff console: counts, accounts, posts, communities, events | Platform staff |
 | `/adult` | Gated R5 scaffold (unlinked; 404s unless enabled) | Account + gates |
 
 ## Tech stack
@@ -231,6 +232,22 @@ Copy `.env.example` to `.env`. Key variables:
 | `VITE_API_BASE_URL` | *(empty)* | Optional build-time base path |
 
 Compose reads `.env` automatically. Never commit real secrets.
+
+## Admin console
+
+A staff console lives at `/api/v1/admin/*` behind an authenticated session plus a
+platform staff grant, and at `/admin` in the web app (a "Staff → Admin" entry appears in the
+navigation only for granted accounts).
+
+- **Overview** — account, session, content and storage counts, plus the newest accounts, posts and
+  open reports, with a link into the moderation queue.
+- **Users** — searchable account list with post and session counts, staff badges, and suspend /
+  reinstate. Suspending also ends that account's sessions immediately.
+- **Posts, communities, events** — searchable, paginated tables with links into the app.
+
+Grant a staff account by setting `PLATFORM_MODERATOR_EMAIL` to an existing account's email and
+restarting the API; it inserts the grant at startup. Everyone else receives `403` from every
+console route, and `/api/v1/admin/me` tells the client whether to show the entry.
 
 ## Security posture
 

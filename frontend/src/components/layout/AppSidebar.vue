@@ -57,7 +57,7 @@ const sections = computed<NavSection[]>(() => {
     ]
   }
 
-  return [
+  const base: NavSection[] = [
   {
     items: [
       { label: 'Home', icon: 'home', to: '/home' },
@@ -77,6 +77,16 @@ const sections = computed<NavSection[]>(() => {
     ],
   },
   ]
+
+  // The console is for granted staff only; the API refuses everyone else too.
+  if (auth.user?.is_staff) {
+    base.push({
+      label: 'Staff',
+      items: [{ label: 'Admin', icon: 'shield', to: '/admin' }],
+    })
+  }
+
+  return base
 })
 
 /** Inclusive match so /communities/:slug keeps Communities lit. */

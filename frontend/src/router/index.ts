@@ -103,6 +103,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Settings', requiresAuth: true },
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/AdminView.vue'),
+    meta: { title: 'Admin', requiresAuth: true },
+  },
+  {
     path: '/moderation',
     name: 'moderation',
     component: () => import('@/views/ModerationView.vue'),

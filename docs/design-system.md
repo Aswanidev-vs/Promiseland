@@ -301,6 +301,11 @@ button; after reveal, a quiet "Hide again" text action stays.
   visibility), Appearance (icon and banner uploads that persist on pick), Rules (current list plus an add
   form) and Moderators (add by member ID). Owners and moderators only; everyone else gets the compact
   forbidden block. Forms sit in cards, the rail is absent.
+- **Admin console (`/admin`, staff only):** tabs for Overview, Users, Posts, Communities and Events.
+  Overview is a dense grid of counts (label at `--text-xs`, figure at `--text-xl`, `tabular-nums`) over
+  three hairline lists. Tables are dense and scannable — hairline rows, mono figures, state as words
+  ("Active"/"Suspended", never colour alone) — and scroll horizontally inside their own container rather
+  than pushing the page. Ordinary accounts get the compact forbidden block and never call the API.
 - **Settings (profile):** the shared image uploader with a circular preview, the file name and pixel size
   after a pick, and a quiet Remove that clears the stored image at once; the paste-a-link field stays below
   as the alternative.
