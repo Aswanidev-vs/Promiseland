@@ -29,6 +29,9 @@ func validatePatch(p postPatch) map[string]string {
 	if p.SpoilerNote != nil && utf8.RuneCountInString(*p.SpoilerNote) > 200 {
 		details["spoilerNote"] = "Spoiler note must be at most 200 characters."
 	}
+	if p.LinkURL != nil && !shared.ValidOptionalURL(*p.LinkURL) {
+		details["linkUrl"] = "Links must be an http or https address."
+	}
 	if p.MediaIDs != nil && len(dedupeIDs(*p.MediaIDs)) > 4 {
 		details["mediaIds"] = "A post can have at most 4 media attachments."
 	}

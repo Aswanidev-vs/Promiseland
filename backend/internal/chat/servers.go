@@ -38,8 +38,8 @@ func validateServer(in serverInput) map[string]string {
 	if utf8.RuneCountInString(in.Description) > 2000 {
 		details["description"] = "Description must be at most 2000 characters."
 	}
-	if in.IconURL != nil && utf8.RuneCountInString(*in.IconURL) > 2048 {
-		details["icon_url"] = "Icon URL must be at most 2048 characters."
+	if in.IconURL != nil && !shared.ValidOptionalURL(*in.IconURL) {
+		details["icon_url"] = "Icon must be an http or https address of at most 2048 characters."
 	}
 	return details
 }

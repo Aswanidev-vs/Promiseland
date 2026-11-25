@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
@@ -308,5 +309,34 @@ func TestFeedPagination(t *testing.T) {
 		"/api/v1/posts?limit=2&cursor="+first.NextCursor, nil, nil))
 	if len(second.Items) != 1 || second.NextCursor != "" {
 		t.Fatalf("page 2 = %+v", second)
+	}
+}
+
+// Stored links are rendered as href, so a non-http scheme must never be saved.
+func TestPostLinkRejectsNonHTTPSchemes(t *testing.T) {
+	d, user := testDeps(t)
+	h := testRouter(d)
+	cookie := authCookie(t, d, user)
+
+	for _, link := range []string{"javascript:alert(1)", "data:text/html,<script>alert(1)</script>", "//evil.example"} {
+		rec := request(t, h, http.MethodPost, "/api/v1/posts", map[string]any{
+			"type": "link", "title": "A link", "linkUrl": link,
+		}, cookie)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("link %q accepted: %d %s", link, rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), "linkUrl") {
+			t.Fatalf("link %q: no field error in %s", link, rec.Body.String())
+		}
+	}
+
+	post := createTestPost(t, h, cookie, map[string]any{
+		"type": "link", "title": "A good link", "linkUrl": "https://example.com/art",
+	})
+	patched := request(t, h, http.MethodPatch, fmt.Sprintf("/api/v1/posts/%d", post.ID), map[string]any{
+		"linkUrl": "javascript:alert(1)",
+	}, cookie)
+	if patched.Code != http.StatusBadRequest {
+		t.Fatalf("patch accepted a javascript link: %d %s", patched.Code, patched.Body.String())
 	}
 }

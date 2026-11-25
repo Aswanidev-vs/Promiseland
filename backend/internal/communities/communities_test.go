@@ -3,6 +3,7 @@ package communities
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -230,5 +231,27 @@ func TestCommunitySearchTreatsWildcardsAsText(t *testing.T) {
 	}](t, wildcard)
 	if len(listedWildcard.Items) != 0 {
 		t.Fatalf("a literal %% matched %d communities, want 0", len(listedWildcard.Items))
+	}
+}
+
+func TestCommunityImagesRejectNonHTTPSchemes(t *testing.T) {
+	d, owner := testDeps(t)
+	h := testRouter(d)
+	ownerCookie := authCookie(t, d, owner)
+
+	rec := request(t, h, http.MethodPost, "/api/v1/communities", map[string]any{
+		"name": "Bad Icon", "slug": "bad-icon", "description": "x",
+		"icon_url": "javascript:alert(1)",
+	}, ownerCookie)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "icon_url") {
+		t.Fatalf("icon: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec = request(t, h, http.MethodPost, "/api/v1/communities", map[string]any{
+		"name": "Good Icon", "slug": "good-icon", "description": "x",
+		"icon_url": "https://example.com/icon.png",
+	}, ownerCookie)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("https icon refused: %d %s", rec.Code, rec.Body.String())
 	}
 }

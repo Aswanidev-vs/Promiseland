@@ -208,6 +208,9 @@ func validatePostContent(in postInput) map[string]string {
 	if utf8.RuneCountInString(in.SpoilerNote) > 200 {
 		details["spoilerNote"] = "Spoiler note must be at most 200 characters."
 	}
+	if !shared.ValidOptionalURL(in.LinkURL) {
+		details["linkUrl"] = "Links must be an http or https address."
+	}
 	if len(dedupeIDs(in.MediaIDs)) > 4 {
 		details["mediaIds"] = "A post can have at most 4 media attachments."
 	}
