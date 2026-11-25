@@ -1,7 +1,7 @@
 name: CI
 
 # Pull-request and main-branch gate for PRD §11.3 items 1-5: formatting, static
-# analysis, unit and integration tests, the production build, both container
+# analysis, unit and integration tests, the production build, all three container
 # images, and dependency/image scanning. Items 6-9 (publish to ECR, deploy to
 # EC2, post-deploy health check, keep a rollback tag) need a registry and an
 # OIDC deploy role this repository does not have yet, so they are absent rather
@@ -116,6 +116,10 @@ jobs:
       - name: Build the web image
         run: docker build --tag promisedland-web:ci frontend
 
+      # Context is the repository root: the edge image builds the SPA itself.
+      - name: Build the edge image
+        run: docker build --tag promisedland-edge:ci .
+
       # Only fixable findings block: an unfixed base-image CVE is not something
       # a pull request can act on, and gating on it just teaches people to
       # ignore the red run.
@@ -131,12 +135,27 @@ jobs:
             image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
             --exit-code 1 promisedland-web:ci
 
+      - name: Scan the edge image
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY" \
+            image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 promisedland-edge:ci
+
       # Builds prove the images exist; this proves they start, that the API
-      # migrates its database, and that the web image renders its nginx config
-      # and reaches the API. A broken entrypoint only shows up here.
+      # migrates its database, that the web image renders its nginx config and
+      # reaches the API, and that the edge image — the one compose actually runs
+      # in production — serves the SPA and reaches the API by the upstream name
+      # baked into its config. A broken entrypoint only shows up here.
       - name: Smoke test the stack
         run: |
           set -eu
+          cleanup() {
+            docker rm -f api web edge >/dev/null 2>&1 || true
+            docker volume rm smoke-data >/dev/null 2>&1 || true
+            docker network rm smoke >/dev/null 2>&1 || true
+          }
+          # Also covers a failed run: the trap fires on the error exit too.
+          trap cleanup EXIT
           docker network create smoke
           docker run -d --name api --network smoke -v smoke-data:/data \
             -e DATABASE_PATH=/data/promisedland.db \
@@ -146,17 +165,49 @@ jobs:
           docker run -d --name web --network smoke -p 8080:80 \
             -e API_UPSTREAM=http://api:8080 \
             promisedland-web:ci
-          for _ in $(seq 1 30); do
-            if curl -fsS http://localhost:8080/healthz | grep -q '"status":"ok"'; then
-              echo "stack is healthy"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "::error::the web image never answered /healthz with a ready API"
-          docker logs api || true
-          docker logs web || true
-          exit 1
+          # The edge config hardcodes `proxy_pass http://api:8080`, so the API
+          # container name above is the whole upstream contract. 8098 avoids the
+          # 8080/5173 dev-server ports.
+          docker run -d --name edge --network smoke -p 8098:80 \
+            promisedland-edge:ci
+
+          # The API needs a moment to migrate SQLite before either proxy can
+          # answer, so both checks retry instead of racing it.
+          wait_healthy() {
+            for _ in $(seq 1 30); do
+              if curl -fsS "http://localhost:$1/healthz" | grep -q '"status":"ok"'; then
+                return 0
+              fi
+              sleep 2
+            done
+            return 1
+          }
+          dump_logs() {
+            docker logs api || true
+            docker logs web || true
+            docker logs edge || true
+          }
+
+          if ! wait_healthy 8080; then
+            echo "::error::the web image never answered /healthz with a ready API"
+            dump_logs
+            exit 1
+          fi
+          echo "web image reaches the API"
+
+          if ! wait_healthy 8098; then
+            echo "::error::the edge image never answered /healthz with a ready API"
+            dump_logs
+            exit 1
+          fi
+          # / proves the SPA is served, /api/... proves the proxy path, and the
+          # uid check proves the unprivileged base image is still unprivileged.
+          curl -fsS -o /dev/null -w 'edge / -> %{http_code} %{content_type}\n' \
+            http://localhost:8098/ | grep -q '^edge / -> 200 text/html'
+          curl -fsS 'http://localhost:8098/api/v1/communities?limit=2' \
+            | grep -q '"items"'
+          test "$(docker exec edge id -u)" = 101
+          echo "edge image serves the SPA, proxies /api and /healthz, runs as UID 101"
 
   compose:
     name: Compose configuration
