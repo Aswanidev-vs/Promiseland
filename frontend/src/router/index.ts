@@ -61,6 +61,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Community', requiresAuth: true },
   },
   {
+    path: '/communities/:slug/manage',
+    name: 'community-manage',
+    component: () => import('@/views/CommunityManageView.vue'),
+    meta: { title: 'Manage community', requiresAuth: true },
+  },
+  {
     path: '/posts/new',
     name: 'create-post',
     component: () => import('@/views/CreatePostView.vue'),
