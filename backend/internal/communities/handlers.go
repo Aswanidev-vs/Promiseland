@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Aswanidev-vs/promiseland/backend/internal/feed/shape"
 	"github.com/Aswanidev-vs/promiseland/backend/internal/shared"
 	"github.com/go-chi/chi/v5"
 )
@@ -213,13 +214,16 @@ func (h *handler) listCommunities(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	// Escape LIKE wildcards so a search for "100%" matches the text, not a
+	// pattern that sweeps the whole catalogue.
+	q := shape.EscapeLike(strings.TrimSpace(r.URL.Query().Get("q")))
 	query := communitySelect + `
 		WHERE c.id < ?
 		  AND (c.visibility = 'public' OR EXISTS(
 		        SELECT 1 FROM community_memberships m
 		        WHERE m.community_id = c.id AND m.user_id = ? AND m.status = 'active'))
-		  AND (? = '' OR c.name LIKE '%' || ? || '%' OR c.slug LIKE '%' || ? || '%')
+		  AND (? = '' OR c.name LIKE '%' || ? || '%' ESCAPE '\'
+		              OR c.slug LIKE '%' || ? || '%' ESCAPE '\')
 		ORDER BY c.id DESC LIMIT ?`
 	rows, err := h.d.DB.QueryContext(r.Context(), query, viewer, viewer, viewer, cursor, viewer, q, q, q, p.Limit+1)
 	if err != nil {

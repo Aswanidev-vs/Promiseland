@@ -196,3 +196,39 @@ func TestCommunityPostsPaginationAndShape(t *testing.T) {
 		t.Fatalf("page 2 = %+v", page2)
 	}
 }
+
+// A search term of "%" used to match every community because the LIKE pattern
+// treated it as a wildcard. Escaping makes it literal text.
+func TestCommunitySearchTreatsWildcardsAsText(t *testing.T) {
+	d, owner := testDeps(t)
+	h := testRouter(d)
+	ownerCookie := authCookie(t, d, owner)
+
+	if rec := request(t, h, http.MethodPost, "/api/v1/communities", map[string]any{
+		"name": "Cosplay Craft", "slug": "cosplay-craft", "description": "Props and sewing",
+	}, ownerCookie); rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+	}
+
+	all := request(t, h, http.MethodGet, "/api/v1/communities", nil, ownerCookie)
+	if all.Code != http.StatusOK {
+		t.Fatalf("list: %d", all.Code)
+	}
+	listedAll := decodeBody[struct {
+		Items []Community `json:"items"`
+	}](t, all)
+	if len(listedAll.Items) != 1 {
+		t.Fatalf("expected one community, got %d", len(listedAll.Items))
+	}
+
+	wildcard := request(t, h, http.MethodGet, "/api/v1/communities?q=%25", nil, ownerCookie)
+	if wildcard.Code != http.StatusOK {
+		t.Fatalf("wildcard search: %d %s", wildcard.Code, wildcard.Body.String())
+	}
+	listedWildcard := decodeBody[struct {
+		Items []Community `json:"items"`
+	}](t, wildcard)
+	if len(listedWildcard.Items) != 0 {
+		t.Fatalf("a literal %% matched %d communities, want 0", len(listedWildcard.Items))
+	}
+}
