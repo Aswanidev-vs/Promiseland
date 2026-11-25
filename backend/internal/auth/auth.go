@@ -32,9 +32,10 @@ const userColumns = `
 
 // dummyHash is compared against on failed lookups so unknown-email and
 // wrong-password requests take a similar amount of time. It is a throwaway
-// bcrypt hash of a string nobody can use to sign in.
+// bcrypt hash of a string nobody can use to sign in, generated at the same cost
+// as real hashes: a cheaper dummy would make registered emails measurable.
 var dummyHash = func() string {
-	hash, err := bcrypt.GenerateFromPassword([]byte("promisedland-dummy-password"), bcrypt.MinCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte("promisedland-dummy-password"), bcrypt.DefaultCost)
 	if err != nil {
 		return ""
 	}
