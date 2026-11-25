@@ -1,3 +1,15 @@
+<script lang="ts">
+// Module scope on purpose: one counter per module keeps generated ids unique
+// across instances. A counter inside <script setup> resets per instance, which
+// gives every field the same id and makes labels point at the wrong control.
+let sequence = 0
+
+function nextId(prefix: string): string {
+  sequence += 1
+  return `${prefix}-${sequence}`
+}
+</script>
+
 <script setup lang="ts">
 import BaseButton from './BaseButton.vue'
 
@@ -12,8 +24,7 @@ withDefaults(
 
 const emit = defineEmits<{ action: [] }>()
 
-let sequence = 0
-const titleId = `empty-title-${++sequence}`
+const titleId = nextId('empty-title')
 </script>
 
 <template>
