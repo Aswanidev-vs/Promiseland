@@ -223,7 +223,7 @@ func (s *service) register(w http.ResponseWriter, r *http.Request) {
 	}
 	setSessionCookie(w, s.d, sessionToken)
 	response := registerResponse{User: user}
-	if !s.d.Config.IsProduction() {
+	if s.d.Config.DevExposeTokens {
 		response.DevVerificationToken = verificationToken
 	}
 	shared.WriteJSON(w, http.StatusCreated, response)
@@ -392,7 +392,7 @@ func (s *service) passwordResetRequest(w http.ResponseWriter, r *http.Request) {
 			internalError(w, s.d, "reset request: store token", err)
 			return
 		}
-		if !s.d.Config.IsProduction() {
+		if s.d.Config.DevExposeTokens {
 			response.DevResetToken = token
 		}
 	} else if !errors.Is(err, sql.ErrNoRows) {

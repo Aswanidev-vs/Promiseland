@@ -34,9 +34,15 @@ func newTestEnv(t *testing.T, appEnv string) *testEnv {
 		t.Fatalf("Migrate: %v", err)
 	}
 	deps := &shared.Deps{
-		DB:     database,
-		Log:    slog.New(slog.NewTextHandler(io.Discard, nil)),
-		Config: config.Config{AppEnv: appEnv, CORSOrigin: "http://localhost:5173"},
+		DB:  database,
+		Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Config: config.Config{
+			AppEnv:     appEnv,
+			CORSOrigin: "http://localhost:5173",
+			// Tokens are only useful to the tests that assert on them; the
+			// default deployment no longer returns them.
+			DevExposeTokens: appEnv != config.ProductionEnv,
+		},
 	}
 	router := chi.NewRouter()
 	router.Route("/api/v1", func(r chi.Router) {
@@ -470,5 +476,24 @@ func TestProductionNeverReturnsDevTokens(t *testing.T) {
 		map[string]any{"email": "prod@example.com"})
 	if status != http.StatusAccepted || strings.Contains(string(body), "devResetToken") {
 		t.Errorf("production reset leaked token: %d %s", status, body)
+	}
+}
+
+// The dev-token convenience must be requested explicitly: a deployment that
+// only forgot APP_ENV used to hand reset tokens to anonymous callers.
+func TestDevTokensStayOffUnlessEnabled(t *testing.T) {
+	env := newTestEnv(t, "development")
+	env.d.Config.DevExposeTokens = false
+
+	if status, _, body := env.do(t, http.MethodPost, "/api/v1/auth/register", map[string]any{
+		"email": "no-token@example.com", "password": "correct horse battery",
+		"username": "no_token", "displayName": "No Token",
+	}); status != http.StatusCreated || strings.Contains(string(body), "devVerificationToken") {
+		t.Fatalf("register leaked a dev token: %d %s", status, body)
+	}
+
+	if status, _, body := env.do(t, http.MethodPost, "/api/v1/auth/password-reset/request",
+		map[string]any{"email": "no-token@example.com"}); status != http.StatusAccepted || strings.Contains(string(body), "devResetToken") {
+		t.Fatalf("reset request leaked a dev token: %d %s", status, body)
 	}
 }

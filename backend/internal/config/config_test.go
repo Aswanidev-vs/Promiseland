@@ -71,3 +71,33 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		})
 	}
 }
+
+func TestDevExposeTokensRequiresExplicitOptIn(t *testing.T) {
+	t.Setenv("APP_ENV", "development")
+	t.Setenv("DEV_EXPOSE_TOKENS", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.DevExposeTokens {
+		t.Fatal("dev tokens must stay off by default")
+	}
+
+	t.Setenv("DEV_EXPOSE_TOKENS", "true")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.DevExposeTokens {
+		t.Fatal("explicit opt-in should enable dev tokens")
+	}
+
+	t.Setenv("APP_ENV", "production")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.DevExposeTokens {
+		t.Fatal("production must never expose dev tokens")
+	}
+}

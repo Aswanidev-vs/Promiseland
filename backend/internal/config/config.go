@@ -41,6 +41,10 @@ type Config struct {
 	CORSOrigin         string
 	SessionSecret      string
 	FeatureAdultDating bool
+	// DevExposeTokens returns verification and password-reset tokens in API
+	// responses. Off unless DEV_EXPOSE_TOKENS is explicitly set, and never in
+	// production: either one hands an anonymous caller account takeover.
+	DevExposeTokens bool
 }
 
 // Load reads configuration from the environment, applies defaults, validates
@@ -102,6 +106,12 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("config: FEATURE_ADULT_DATING must be a boolean (got %q)", adultRaw)
 	}
 
+	devTokensRaw := strings.TrimSpace(getenv("DEV_EXPOSE_TOKENS", "false"))
+	devTokens, err := strconv.ParseBool(devTokensRaw)
+	if err != nil {
+		return Config{}, fmt.Errorf("config: DEV_EXPOSE_TOKENS must be a boolean (got %q)", devTokensRaw)
+	}
+
 	return Config{
 		Port:               port,
 		DatabasePath:       databasePath,
@@ -109,6 +119,7 @@ func Load() (Config, error) {
 		CORSOrigin:         corsOrigin,
 		SessionSecret:      sessionSecret,
 		FeatureAdultDating: adultDating,
+		DevExposeTokens:    devTokens && appEnv != ProductionEnv,
 	}, nil
 }
 

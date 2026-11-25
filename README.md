@@ -87,6 +87,7 @@ Copy `.env.example` to `.env`. Key variables:
 | `APP_ENV` | `development` | `production` enables Secure cookies |
 | `CORS_ORIGIN` | `http://localhost:5173` | Allowed browser origin |
 | `SESSION_SECRET` | `change-me` | Replace for any non-local use |
+| `DEV_EXPOSE_TOKENS` | `false` | Return verification and reset tokens in API responses for local testing. Never enabled in production |
 | `FEATURE_ADULT_DATING` | `false` | R5 adults-only module gate (off by default) |
 | `ADULT_AGE_ASSURANCE` | `none` | R5 eligibility mode: `none` denies everyone; `development_stub` is dev-only, never production. See `docs/adult-safety.md` |
 | `API_UPSTREAM` | `http://api:8080` | Frontend nginx → API runtime upstream |
