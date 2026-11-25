@@ -325,14 +325,14 @@ func (h *Hub) allowedOrigin(r *http.Request) bool {
 	if allowed == "" {
 		allowed = config.DefaultCORSOrigin
 	}
-	allowed = strings.TrimRight(allowed, "/")
-	if allowed == "*" {
-		return true
-	}
+	// A wildcard never authorises a foreign origin here: WebSocket handshakes
+	// carry the session cookie, so only same-host and the exact configured
+	// origin are accepted.
 	if sameHost(origin, r.Host) {
 		return true
 	}
-	return strings.TrimRight(origin, "/") == allowed
+	allowed = strings.TrimRight(allowed, "/")
+	return allowed != "*" && strings.TrimRight(origin, "/") == allowed
 }
 
 // sameHost reports whether an Origin's host (including explicit port) matches

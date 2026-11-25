@@ -481,3 +481,22 @@ func TestDefaultIsProcessWideSingleton(t *testing.T) {
 		t.Fatal("Default() returned two different hubs")
 	}
 }
+
+func TestWildcardOriginStillRejectsForeignWebSockets(t *testing.T) {
+	hub := NewHub(nil)
+	hub.SetDeps(&shared.Deps{Config: config.Config{CORSOrigin: "*"}})
+
+	foreign := httptest.NewRequest(http.MethodGet, "/ws", nil)
+	foreign.Host = "app.example"
+	foreign.Header.Set("Origin", "https://evil.example")
+	if hub.allowedOrigin(foreign) {
+		t.Fatal("a wildcard CORS origin must not authorise a foreign WebSocket origin")
+	}
+
+	same := httptest.NewRequest(http.MethodGet, "/ws", nil)
+	same.Host = "app.example"
+	same.Header.Set("Origin", "https://app.example")
+	if !hub.allowedOrigin(same) {
+		t.Fatal("same-host WebSocket origin should be allowed")
+	}
+}
