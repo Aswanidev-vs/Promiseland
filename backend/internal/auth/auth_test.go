@@ -497,3 +497,28 @@ func TestDevTokensStayOffUnlessEnabled(t *testing.T) {
 		t.Fatalf("reset request leaked a dev token: %d %s", status, body)
 	}
 }
+
+func TestSuspendedAccountLosesItsSessionImmediately(t *testing.T) {
+	env := newTestEnv(t, "development")
+	if status, _, body := env.do(t, http.MethodPost, "/api/v1/auth/register", map[string]any{
+		"email": "suspended@example.com", "password": "correct horse battery",
+		"username": "suspended_user", "displayName": "Suspended",
+	}); status != http.StatusCreated {
+		t.Fatalf("register = %d (%s)", status, body)
+	}
+
+	if status, _, body := env.do(t, http.MethodGet, "/api/v1/auth/me", nil); status != http.StatusOK {
+		t.Fatalf("me before suspension = %d (%s)", status, body)
+	}
+
+	if _, err := env.d.DB.Exec(`UPDATE users SET is_active = 0 WHERE username = ?`, "suspended_user"); err != nil {
+		t.Fatalf("deactivate user: %v", err)
+	}
+	if _, err := env.d.DB.Exec(`DELETE FROM sessions WHERE user_id = (SELECT id FROM users WHERE username = ?)`, "suspended_user"); err != nil {
+		t.Fatalf("revoke sessions: %v", err)
+	}
+
+	if status, _, body := env.do(t, http.MethodGet, "/api/v1/auth/me", nil); status != http.StatusUnauthorized {
+		t.Fatalf("me after suspension = %d (%s), want 401", status, body)
+	}
+}

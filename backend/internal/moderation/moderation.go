@@ -567,6 +567,10 @@ func (m *module) suspend(ctx context.Context, tx *sql.Tx, userID int64, reason s
 			m.logError("deactivate suspended user failed", err)
 		}
 	}
+	// Drop existing sessions so the suspension takes effect immediately.
+	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ?`, userID); err != nil {
+		m.logError("revoke sessions of suspended user failed", err)
+	}
 }
 
 func (m *module) handleSuspendUser(w http.ResponseWriter, r *http.Request) {

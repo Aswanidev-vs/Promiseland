@@ -44,10 +44,13 @@ func (d *Deps) SessionUserID(r *http.Request) (int64, bool) {
 	defer cancel()
 
 	var userID int64
+	// A session only counts while its account is active: suspending someone
+	// must end the access they already hold, not wait for the cookie to expire.
 	err = d.DB.QueryRowContext(ctx, `
-		SELECT user_id
-		FROM sessions
-		WHERE token_hash = ? AND expires_at > datetime('now')
+		SELECT s.user_id
+		FROM sessions s
+		JOIN users u ON u.id = s.user_id
+		WHERE s.token_hash = ? AND s.expires_at > datetime('now') AND u.is_active = 1
 		LIMIT 1`, tokenHash).Scan(&userID)
 	if err != nil {
 		// Missing, expired or revoked sessions are all simply unauthenticated.
