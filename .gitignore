@@ -13,6 +13,13 @@ bun.lockb
 .env.*
 !.env.example
 
+# Key material and logs must never be committed
+*.pem
+*.key
+*.crt
+*.p12
+*.log
+
 # SQLite database files and runtime data
 *.db
 *.db-shm
