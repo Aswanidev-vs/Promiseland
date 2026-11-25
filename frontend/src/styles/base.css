@@ -27,20 +27,39 @@ h3,
 h4 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 560;
   line-height: var(--leading-heading);
   font-optical-sizing: auto;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
 
 h1 {
-  font-size: var(--text-4xl);
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
 }
 h2 {
   font-size: var(--text-2xl);
+  letter-spacing: -0.015em;
 }
 h3 {
   font-size: var(--text-xl);
+}
+
+/* The hero and the wordmark are the only places we push the display weight. */
+.display-hero {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 600;
+  font-optical-sizing: auto;
+  line-height: 1.03;
+  letter-spacing: -0.025em;
+}
+
+.u-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
 }
 
 p {

@@ -45,14 +45,17 @@ with `{ name: 'login' }` / `{ name: 'home' }`.
 
 ## Design contract
 
-- Dark ink-blue surfaces; ember marks the single primary action; tide marks
-  discovery and links. All values live in `src/styles/tokens.css`.
-- Fraunces (display), Inter (body), IBM Plex Mono (figures/coordinates), all
-  self-hosted through `@fontsource`.
-- The wayfinder compass/constellation is the signature motif. It appears in the
-  brand mark, the landing hero, empty states, and the 404.
+- Warm parchment text and lantern-amber actions on cool ink-blue night surfaces.
+  Ember marks the single primary action per screen; tide marks links/discovery.
+  All values live in `src/styles/tokens.css` (design-system.md v2).
+- Variable fonts self-hosted via `@fontsource-variable`: Fraunces (display, with
+  opsz/SOFT/WONK axes), Inter (body, opsz/wght), IBM Plex Mono (figures/coordinates).
+- The wayfinder constellation is the signature motif: brand mark, landing hero,
+  empty states, 404, and the profile "fandom bearing" star chart.
 - One orchestrated page-load reveal (40ms stagger, 8px rise, opacity). Motion is
   disabled under `prefers-reduced-motion: reduce`.
+- Responsive 375px -> wide desktop; 44px touch targets; contrast >= 4.5:1.
+  Zero hardcoded hex outside `tokens.css`.
 
 ## Container
 

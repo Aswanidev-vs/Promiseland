@@ -177,7 +177,7 @@ async function submit(): Promise<void> {
   overflow-y: auto;
   padding: var(--space-4);
   place-items: center;
-  background: rgba(0, 0, 0, 0.68);
+  background: var(--scrim);
 }
 
 .dialog {

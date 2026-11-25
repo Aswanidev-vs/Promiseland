@@ -51,30 +51,25 @@ function select(value: string): void {
   min-height: 44px;
   padding: 0 var(--space-4);
   border: 0;
+  border-bottom: 2px solid transparent;
   background: none;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: var(--text-base);
   font-weight: 500;
   white-space: nowrap;
+  transition:
+    border-bottom-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 
 .tabs__tab:hover {
   color: var(--text-primary);
+  transition: color var(--dur-fast) var(--ease);
 }
 
 .tabs__tab--active {
   color: var(--text-primary);
-}
-
-.tabs__tab--active::after {
-  position: absolute;
-  right: var(--space-3);
-  bottom: -1px;
-  left: var(--space-3);
-  height: 2px;
-  border-radius: var(--radius-pill);
-  background: var(--ember);
-  content: '';
+  border-bottom-color: var(--ember);
 }
 </style>

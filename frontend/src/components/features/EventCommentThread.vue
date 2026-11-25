@@ -245,7 +245,7 @@ async function publish(body: string, parentId?: number): Promise<void> {
 }
 
 .event-comment__action {
-  min-height: 32px;
+  min-height: 44px;
   margin-top: var(--space-2);
   padding: 0;
   border: 0;
@@ -264,7 +264,7 @@ async function publish(body: string, parentId?: number): Promise<void> {
   flex-direction: column;
   gap: var(--space-3);
   margin: var(--space-3) 0 0 var(--space-6);
-  padding-left: var(--space-4);
+  padding-left: var(--space-6);
   border-left: 1px solid var(--border-hairline);
 }
 

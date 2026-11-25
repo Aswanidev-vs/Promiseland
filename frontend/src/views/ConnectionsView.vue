@@ -236,6 +236,8 @@ onMounted(() => void load(true))
 
 .connections__title {
   font-family: var(--font-display);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .connections__intro {

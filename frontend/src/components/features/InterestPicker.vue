@@ -54,6 +54,7 @@ onMounted(load)
         :key="item.id"
         type="button"
         class="interest-picker__option"
+        :class="{ selected: modelValue.includes(item.id) }"
         :aria-pressed="modelValue.includes(item.id)"
         @click="toggle(item.id)"
       >
@@ -84,11 +85,18 @@ onMounted(load)
 }
 
 .interest-picker__option {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
+}
+
+/* Selected chip state, styled here since TagChip is shared. */
+.interest-picker__option.selected :deep(.chip) {
+  border-color: var(--ember);
+  background: var(--ember-soft);
+  color: var(--ember);
 }
 
 .interest-picker__hint,

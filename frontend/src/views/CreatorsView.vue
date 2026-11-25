@@ -158,7 +158,8 @@ onBeforeUnmount(() => {
 }
 
 .creators__header h1 {
-  font-size: var(--text-2xl);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .creators__intro {

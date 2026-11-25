@@ -1,8 +1,10 @@
-import { createPinia } from 'pinia'
-import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { cancelRsvp, rsvpEvent } from '@/api/events'
-import type { Event } from '@/types'
+import { useAuthStore } from '@/stores/auth'
+import type { Event, User } from '@/types'
 import RsvpControl from './RsvpControl.vue'
 
 vi.mock('@/api/events', () => ({
@@ -34,21 +36,41 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
   } as Event
 }
 
-function mountControl(event: Event) {
-  return mount(RsvpControl, {
-    props: { event },
-    global: { plugins: [createPinia()] },
+async function mountControl(event: Event, { signedIn = true } = {}) {
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  if (signedIn) {
+    useAuthStore(pinia).user = { id: 2, username: 'mira' } as unknown as User
+  }
+
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/events/:id', name: 'event', component: { template: '<div />' } },
+      { path: '/login', name: 'login', component: { template: '<div />' } },
+    ],
   })
+  await router.push('/events/12')
+  await router.isReady()
+
+  return {
+    wrapper: mount(RsvpControl, {
+      props: { event },
+      global: { plugins: [pinia, router] },
+    }),
+    router,
+  }
 }
 
 describe('RsvpControl', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     vi.mocked(rsvpEvent).mockResolvedValue(makeEvent({ rsvp_status: 'going', rsvp_count: 6 }))
     vi.mocked(cancelRsvp).mockResolvedValue(makeEvent())
   })
 
   it('emits the chosen status for Going and Maybe', async () => {
-    const wrapper = mountControl(makeEvent())
+    const { wrapper } = await mountControl(makeEvent())
 
     expect(wrapper.get('.rsvp__capacity').text()).toBe('5 of 20 going')
 
@@ -62,7 +84,7 @@ describe('RsvpControl', () => {
   })
 
   it('emits null when an existing response is cancelled', async () => {
-    const wrapper = mountControl(makeEvent({ rsvp_status: 'going' }))
+    const { wrapper } = await mountControl(makeEvent({ rsvp_status: 'going' }))
 
     await wrapper.get('[data-status="cancel"]').trigger('click')
 
@@ -70,10 +92,21 @@ describe('RsvpControl', () => {
     expect(wrapper.emitted('change')?.[0]).toEqual([null])
   })
 
-  it('explains when an event has reached capacity', () => {
-    const wrapper = mountControl(makeEvent({ capacity: 10, rsvp_count: 10 }))
+  it('explains when an event has reached capacity', async () => {
+    const { wrapper } = await mountControl(makeEvent({ capacity: 10, rsvp_count: 10 }))
 
     expect(wrapper.get('.rsvp__capacity').text()).toBe('10 of 10 going')
     expect(wrapper.get('.rsvp__note').text()).toBe('This event is at capacity.')
+  })
+
+  it('sends guests to sign in instead of calling the API', async () => {
+    const { wrapper, router } = await mountControl(makeEvent(), { signedIn: false })
+
+    await wrapper.get('[data-status="going"]').trigger('click')
+    await flushPromises()
+
+    expect(rsvpEvent).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/events/12')
   })
 })

@@ -96,7 +96,7 @@ function toggle(value: string): void {
 }
 
 .category-picker__option {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: none;

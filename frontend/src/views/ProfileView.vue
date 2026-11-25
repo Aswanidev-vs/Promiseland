@@ -35,6 +35,27 @@ const reportOpen = ref(false)
 const actionError = ref('')
 
 const isSelf = computed(() => !!profile.value && !!auth.user && profile.value.id === auth.user.id)
+// The fandom bearing: favourite titles and interests plotted as a star
+// chart (design-system §5, signature #2). Positions are deterministic
+// from real profile data — nothing is invented; the panel renders only
+// when the data exists.
+const bearingStars = computed(() => {
+  const titles = (profile.value?.anime_interests ?? [])
+    .map((entry) => entry.anime?.title)
+    .filter((title): title is string => !!title && title.trim().length > 0)
+  const names = (profile.value?.interests ?? [])
+    .map((item) => item.name)
+    .filter((name) => !!name && !titles.includes(name))
+  const labels = [...titles, ...names].slice(0, 6)
+  if (!labels.length) return []
+  const spots = [[38,34],[104,66],[168,30],[232,62],[292,34],[86,96]]
+  return labels.map((label, i) => ({
+    title: label,
+    x: spots[i][0],
+    y: spots[i][1],
+    label: label.length > 16 ? label.slice(0, 15) + '\u2026' : label,
+  }))
+})
 const tabs = computed(() => [
   { value: 'posts', label: 'Posts' },
   { value: 'about', label: 'About' },
@@ -168,7 +189,21 @@ watch(username, load)
         <p v-if="actionError" class="profile__error" role="alert">{{ actionError }}</p>
       </section>
 
-      <div class="profile__counts">
+      <section v-if="bearingStars.length" class="bearing" aria-label="Fandom bearing">
+  <h2 class="bearing__title">Fandom bearing</h2>
+  <svg class="bearing__chart" viewBox="0 0 330 120" role="img" aria-label="Your favourite titles plotted as stars">
+    <path d="M38 34 104 66 168 30 232 62 292 34" fill="none" stroke="var(--border-strong)" stroke-width="1" />
+    <path d="M104 66 86 96 168 30 232 62 292 34" fill="none" stroke="var(--border-hairline)" stroke-width="1" />
+    <g v-for="(star, i) in bearingStars" :key="star.title">
+      <circle :cx="star.x" :cy="star.y" :r="i === 0 ? 5 : 3.5" fill="var(--ink-600)" />
+      <circle :cx="star.x" :cy="star.y" r="9" fill="none" stroke="var(--ink-600)" stroke-opacity="0.3" />
+      <text :x="star.x + 12" :y="star.y + 4" class="bearing__label">{{ star.label }}</text>
+    </g>
+  </svg>
+  <p class="bearing__caption mono">{{ bearingStars.length }} titles plotted</p>
+</section>
+
+<div class="profile__counts">
         <span><strong class="mono">{{ profile.post_count ?? 0 }}</strong> posts</span>
         <span><strong class="mono">{{ profile.follower_count ?? 0 }}</strong> followers</span>
         <span><strong class="mono">{{ profile.following_count ?? 0 }}</strong> following</span>
@@ -252,13 +287,21 @@ watch(username, load)
   background: var(--ink-800);
 }
 
+/* 96px avatar, pulled down so it overlaps the banner above. */
+.profile__header :deep(.avatar) {
+  width: 96px;
+  height: 96px;
+  margin-top: calc(-1 * var(--space-6));
+}
+
 .profile__identity {
   flex: 1;
   min-width: 0;
 }
 
 .profile__name {
-  font-size: var(--text-2xl);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .profile__handle {
@@ -339,4 +382,18 @@ watch(username, load)
     padding: var(--space-4);
   }
 }
-</style>
+
+/* Signature #2 — the fandom bearing: interests plotted as a star chart. */
+.bearing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--ink-850);
+}
+.bearing__title { font-size: var(--text-lg); }
+.bearing__chart { width: 100%; height: auto; max-height: 140px; }
+.bearing__label { fill: var(--text-secondary); font-family: var(--font-mono); font-size: var(--text-xs); }
+.bearing__caption { color: var(--text-muted); font-size: var(--text-xs); }</style>

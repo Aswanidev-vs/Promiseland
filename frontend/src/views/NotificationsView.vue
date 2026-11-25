@@ -110,7 +110,7 @@ onMounted(load)
   <div class="notifications">
     <header class="notifications__head">
       <h1>Notifications</h1>
-      <BaseButton variant="primary" :loading="busy" :disabled="!hasUnread" @click="readAll">
+      <BaseButton variant="ghost" :loading="busy" :disabled="!hasUnread" @click="readAll">
         Mark all as read
       </BaseButton>
     </header>
@@ -189,7 +189,11 @@ onMounted(load)
 }
 
 .notifications__head h1 {
-  font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .notifications__group {
@@ -200,7 +204,8 @@ onMounted(load)
 
 .notifications__day {
   color: var(--text-secondary);
-  font-size: var(--text-lg);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
 }
 
 .notifications__list {
@@ -219,10 +224,13 @@ onMounted(load)
   background: var(--ink-800);
   color: inherit;
   text-decoration: none;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
 .notification--unread {
-  border-left: 3px solid var(--tide);
+  background: var(--ink-850);
 }
 
 .notification:hover {
@@ -251,9 +259,9 @@ onMounted(load)
 }
 
 .notification__dot {
-  width: 8px;
-  height: 8px;
+  width: var(--space-2);
+  height: var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--tide);
+  background: var(--ember);
 }
 </style>

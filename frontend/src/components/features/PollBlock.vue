@@ -44,6 +44,12 @@ function percentage(votes: number): number {
           <span v-if="poll.my_vote !== null" class="poll__result mono">
             {{ percentage(option.votes) }}% ({{ option.votes }})
           </span>
+          <span
+            v-if="poll.my_vote !== null"
+            class="poll__bar"
+            :class="{ 'poll__bar--winner': poll.my_vote === option.id }"
+            :style="{ width: `${percentage(option.votes)}%` }"
+          />
         </button>
       </li>
     </ul>
@@ -78,6 +84,7 @@ function percentage(votes: number): number {
 
 .poll__option {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   min-height: 44px;
   align-items: center;
@@ -93,12 +100,25 @@ function percentage(votes: number): number {
 }
 
 .poll__option:disabled {
-  cursor: default;
-  opacity: 1;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .poll__option--mine {
   border-color: var(--ember);
+  border-left: 2px solid var(--ember);
+  background: var(--ember-soft);
+}
+
+.poll__bar {
+  flex-basis: 100%;
+  height: 6px;
+  border-radius: var(--radius-sm);
+  background: var(--ink-600);
+}
+
+.poll__bar--winner {
+  background: var(--ember);
 }
 
 .poll__result {

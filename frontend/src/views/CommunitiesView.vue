@@ -161,6 +161,7 @@ onBeforeUnmount(() => {
     <BaseInput
       v-model="query"
       type="search"
+      class="communities__search"
       label="Search communities"
       placeholder="Search by name or topic"
       @update:model-value="scheduleSearch"
@@ -221,7 +222,8 @@ onBeforeUnmount(() => {
 }
 
 .communities__header h1 {
-  font-size: var(--text-2xl);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .communities__intro {
@@ -246,14 +248,29 @@ onBeforeUnmount(() => {
   font-weight: 500;
 }
 
+.communities__search :deep(.field__input):focus {
+  box-shadow: 0 0 0 3px var(--ember-soft);
+}
+
 .communities__control {
   width: 100%;
   min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
+  padding: var(--space-3) calc(var(--space-3) + 2px);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-primary);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.communities__control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.communities__control:focus {
+  border-color: var(--ember);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .communities__textarea {

@@ -73,7 +73,7 @@ async function toggleBookmark(): Promise<void> {
 <template>
   <BaseCard class="post-card" :class="{ 'post-card--compact': compact }">
     <header class="post-card__head">
-      <Avatar :name="post.author?.display_name || post.author?.username || 'Member'" :src="post.author?.avatar_url" size="sm" />
+      <Avatar :name="post.author?.display_name || post.author?.username || 'Member'" :src="post.author?.avatar_url" size="md" />
       <div class="post-card__byline">
         <RouterLink class="post-card__author" :to="`/u/${post.author?.username || ''}`">
           {{ post.author?.display_name || post.author?.username || 'Member' }}
@@ -210,7 +210,7 @@ async function toggleBookmark(): Promise<void> {
 .post-card__author {
   overflow: hidden;
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -220,12 +220,16 @@ async function toggleBookmark(): Promise<void> {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: var(--text-sm);
 }
 
 .post-card__title {
+  margin-top: var(--space-2);
+  font-family: var(--font-display);
+  font-weight: 560;
   font-size: var(--text-xl);
+  line-height: 1.25;
 }
 
 .post-card__title a {
@@ -291,7 +295,7 @@ async function toggleBookmark(): Promise<void> {
 }
 
 .post-card__action {
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-sm);
@@ -300,11 +304,24 @@ async function toggleBookmark(): Promise<void> {
   font-size: var(--text-sm);
   text-decoration: none;
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 
 .post-card__action:hover:not(:disabled) {
   background: var(--ink-700);
   color: var(--text-primary);
+}
+
+.post-card__action:active:not(:disabled) {
+  background: var(--ink-700);
+  color: var(--text-primary);
+}
+
+.post-card__action:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
 }
 
 .post-card__action--on {
@@ -313,5 +330,13 @@ async function toggleBookmark(): Promise<void> {
 
 .post-card__action--report {
   margin-left: auto;
+}
+
+.post-card {
+  transition: border-color var(--dur) var(--ease);
+}
+
+.post-card:hover {
+  border-color: var(--border-strong);
 }
 </style>

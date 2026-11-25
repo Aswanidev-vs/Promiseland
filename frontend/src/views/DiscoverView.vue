@@ -280,13 +280,13 @@ onBeforeUnmount(clearUndo)
       @submit="submitConnect"
     />
 
-    <Transition name="undo">
-      <div v-if="undo" class="undo-toast" role="status" aria-live="polite">
-        <span class="undo-toast__copy">Suggestion hidden.</span>
-        <button type="button" class="undo-toast__action" @click="undoSuppress">Undo</button>
+    <Transition name="discover-undo">
+      <div v-if="undo" class="discover__undo" role="status" aria-live="polite">
+        <span class="discover__undo-copy">Suggestion hidden.</span>
+        <button type="button" class="discover__undo-action" @click="undoSuppress">Undo</button>
         <button
           type="button"
-          class="undo-toast__close"
+          class="discover__undo-close"
           aria-label="Dismiss"
           @click="clearUndo"
         >
@@ -328,8 +328,9 @@ onBeforeUnmount(clearUndo)
   margin-top: var(--space-2);
   max-width: 18ch;
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  line-height: 1.2;
+  font-weight: 560;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .discover__intro {
@@ -381,11 +382,10 @@ onBeforeUnmount(clearUndo)
   font-weight: 500;
 }
 
-.undo-toast {
+.discover__undo {
   position: fixed;
   right: var(--space-4);
   bottom: calc(var(--bottomnav-h) + var(--space-4));
-  z-index: 55;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -397,12 +397,12 @@ onBeforeUnmount(clearUndo)
   box-shadow: var(--shadow-2);
 }
 
-.undo-toast__copy {
+.discover__undo-copy {
   flex: 1;
   font-size: var(--text-sm);
 }
 
-.undo-toast__action {
+.discover__undo-action {
   min-height: 44px;
   padding: 0 var(--space-2);
   border: 0;
@@ -414,11 +414,11 @@ onBeforeUnmount(clearUndo)
   font-weight: 500;
 }
 
-.undo-toast__action:hover {
+.discover__undo-action:hover {
   color: var(--text-primary);
 }
 
-.undo-toast__close {
+.discover__undo-close {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -432,20 +432,20 @@ onBeforeUnmount(clearUndo)
   cursor: pointer;
 }
 
-.undo-toast__close:hover {
+.discover__undo-close:hover {
   background: var(--ink-700);
   color: var(--text-primary);
 }
 
-.undo-enter-active,
-.undo-leave-active {
+.discover-undo-enter-active,
+.discover-undo-leave-active {
   transition:
     opacity var(--dur) var(--ease),
     transform var(--dur) var(--ease);
 }
 
-.undo-enter-from,
-.undo-leave-to {
+.discover-undo-enter-from,
+.discover-undo-leave-to {
   opacity: 0;
   transform: translateY(8px);
 }

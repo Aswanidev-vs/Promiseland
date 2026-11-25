@@ -172,6 +172,7 @@ async function publish(body: string, parentId?: number): Promise<void> {
 
 .thread__title {
   font-size: var(--text-xl);
+  font-weight: 500;
 }
 
 .thread__composer {
@@ -275,17 +276,31 @@ async function publish(body: string, parentId?: number): Promise<void> {
 }
 
 .comment__action {
-  min-height: 32px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: none;
   color: var(--text-secondary);
   font-size: var(--text-sm);
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 
 .comment__action:hover {
+  background: var(--ink-700);
   color: var(--text-primary);
+}
+
+.comment__action:active {
+  background: var(--ink-700);
+  color: var(--text-primary);
+}
+
+.comment__action:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
 }
 
 .thread__replies {

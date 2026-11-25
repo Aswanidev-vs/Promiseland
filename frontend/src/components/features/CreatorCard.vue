@@ -100,6 +100,7 @@ function thumbGlyph(post: Post | null, index: number): IconName {
 .creator-card__name {
   overflow: hidden;
   color: var(--text-primary);
+  font-family: var(--font-display);
   font-size: var(--text-lg);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -133,7 +134,7 @@ function thumbGlyph(post: Post | null, index: number): IconName {
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--ink-850);
 }
 

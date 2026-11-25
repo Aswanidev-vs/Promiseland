@@ -265,14 +265,14 @@ watch(slug, load)
         </div>
 
         <aside class="community__rail" aria-label="Community information">
-          <BaseCard>
+          <div class="community__rules-well">
             <h2 class="community__rail-title">Rules</h2>
             <ol v-if="rules.length" class="community__rail-rules">
               <li v-for="rule in rules.slice(0, 5)" :key="rule.id">{{ rule.title }}</li>
             </ol>
             <p v-else class="community__note">No rules published.</p>
             <BaseButton variant="ghost" size="sm" @click="changeTab('rules')">See all rules</BaseButton>
-          </BaseCard>
+          </div>
 
           <BaseCard v-if="isModerator" class="community__mod">
             <h2 class="community__rail-title">Moderator tools</h2>
@@ -327,6 +327,7 @@ watch(slug, load)
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-lg);
   object-fit: cover;
+  background: var(--ink-700);
 }
 
 .community__header {
@@ -342,7 +343,8 @@ watch(slug, load)
 }
 
 .community__name {
-  font-size: var(--text-2xl);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .community__handle {
@@ -439,6 +441,16 @@ watch(slug, load)
   gap: var(--space-3);
 }
 
+.community__rules-well {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--ink-850);
+}
+
 .community__rail-title {
   font-size: var(--text-lg);
 }
@@ -473,13 +485,24 @@ watch(slug, load)
 .community__control {
   width: 100%;
   min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
+  padding: var(--space-3) calc(var(--space-3) + 2px);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-primary);
   font-family: var(--font-body);
   resize: vertical;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.community__control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.community__control:focus {
+  border-color: var(--ember);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .community__mod-actions {

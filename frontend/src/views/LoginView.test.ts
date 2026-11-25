@@ -28,6 +28,7 @@ async function setup(redirect?: string) {
       { path: '/register', name: 'register', component: { template: '<div />' } },
       { path: '/reset-password', name: 'reset-password', component: { template: '<div />' } },
       { path: '/home', name: 'home', component: { template: '<div />' } },
+      { path: '/events', name: 'events', component: { template: '<div />' } },
     ],
   })
   await router.push(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login')
@@ -66,8 +67,19 @@ describe('LoginView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.text()).toContain("We couldn't sign you in. Check your email and password, then try again.")
+    expect(wrapper.text()).toContain(
+      "We couldn't sign you in with that email and password. Check them and try again.",
+    )
     expect(wrapper.text()).not.toContain('account not found')
+  })
+
+  it('reveals the password only when asked', async () => {
+    const { wrapper } = await setup()
+
+    expect(wrapper.findAll('input')[1]!.attributes('type')).toBe('password')
+    await wrapper.get('.field__reveal').trigger('click')
+    expect(wrapper.findAll('input')[1]!.attributes('type')).toBe('text')
+    expect(wrapper.get('.field__reveal').attributes('aria-label')).toBe('Hide password')
   })
 
   it('refreshes auth state and redirects to a safe local target', async () => {

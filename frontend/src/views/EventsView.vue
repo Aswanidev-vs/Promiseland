@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
 }
 
 .events__header h1 {
-  font-size: var(--text-2xl);
+  font-size: var(--text-4xl);
 }
 
 .events__intro {
@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
 }
 
 .events__chip {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: none;
@@ -289,10 +289,41 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-primary);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.events__control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.events__control:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+  outline: none;
+}
+
+/* BaseInputs on this screen follow the shared input recipe (ember focus ring + halo). */
+.events .field__input {
+  border-color: var(--border-hairline);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.events .field__input:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.events .field__input:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+  outline: none;
 }
 
 .events__filter-foot {
@@ -327,9 +358,9 @@ onBeforeUnmount(() => {
 }
 
 .events__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: var(--space-5);
 }
 
 .events__more {

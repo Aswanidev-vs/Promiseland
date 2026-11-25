@@ -81,7 +81,7 @@ const countLabel = computed(() => {
 }
 
 .compat__count {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: var(--text-xs);
 }
 

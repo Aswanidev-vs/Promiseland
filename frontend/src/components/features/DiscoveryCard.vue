@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
-import UserCard from './UserCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import CompatibilityBadge from './CompatibilityBadge.vue'
 import type { DiscoveryCandidate } from '@/types'
 
@@ -32,7 +32,16 @@ const statusTone = computed(() => (status.value === 'accepted' ? 'ok' : 'muted')
 <template>
   <BaseCard class="discovery-card">
     <div class="discovery-card__head">
-      <UserCard :user="candidate.user" class="discovery-card__person" />
+      <div class="discovery-card__identity">
+        <Avatar
+          :name="candidate.user.display_name || candidate.user.username"
+          :src="candidate.user.avatar_url"
+        />
+        <span class="discovery-card__name">
+          {{ candidate.user.display_name || candidate.user.username }}
+        </span>
+        <span class="discovery-card__handle">@{{ candidate.user.username }}</span>
+      </div>
       <span v-if="statusNote" class="discovery-card__status" :class="`discovery-card__status--${statusTone}`">
         {{ statusNote }}
       </span>
@@ -88,13 +97,24 @@ const statusTone = computed(() => (status.value === 'accepted' ? 'ok' : 'muted')
   gap: var(--space-4);
 }
 
-/* Reuse UserCard for identity, but drop its own card chrome inside this card. */
-.discovery-card :deep(.user-card.card) {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+.discovery-card__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.discovery-card__name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discovery-card__handle {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
 }
 
 .discovery-card__head {
@@ -103,11 +123,6 @@ const statusTone = computed(() => (status.value === 'accepted' ? 'ok' : 'muted')
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-}
-
-.discovery-card__person {
-  flex: 1;
-  min-width: 0;
 }
 
 .discovery-card__status {

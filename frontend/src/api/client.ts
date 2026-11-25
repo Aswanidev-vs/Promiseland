@@ -1,4 +1,20 @@
 import type { ApiErrorBody, QueryValue } from '@/types'
+import { useFailureStore } from '@/stores/failure'
+
+/**
+ * A 503 from the API (or the dev proxy answering for a down API) is a
+ * service-level failure, not a request-level one. Shows the 503 page; any
+ * successful response clears it again.
+ */
+function trackAvailability(status: number, ok: boolean): void {
+  try {
+    const failure = useFailureStore()
+    if (!ok && status === 503) failure.markServiceUnavailable()
+    else if (ok) failure.markServiceUnavailable(false)
+  } catch {
+    // No active pinia (unit tests calling the client directly).
+  }
+}
 
 /** All REST calls are versioned under this prefix (PRD §14). */
 export const API_BASE = '/api/v1'
@@ -58,6 +74,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   })
 
   if (!response.ok) {
+    trackAvailability(response.status, false)
     let body: ApiErrorBody | undefined
     try {
       const parsed: unknown = await response.json()
@@ -78,6 +95,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     throw new ApiError(response.status, code, message, body)
   }
 
+  trackAvailability(response.status, true)
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }

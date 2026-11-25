@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
 
 .anime-picker__input:focus {
   border-color: var(--ember);
-  outline: none;
+  outline: 2px solid var(--ember); outline-offset: 2px;
 }
 
 .anime-picker__selected {

@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { cancelRsvp, rsvpEvent } from '@/api/events'
 import type { Event, RsvpStatus } from '@/types'
 import { errorMessage } from './format'
+import { useAuthStore } from '@/stores/auth'
+import { useUiStore } from '@/stores/ui'
 import { formatCapacity } from './formatR2'
 
 const props = withDefaults(defineProps<{ event: Event; disabled?: boolean }>(), { disabled: false })
@@ -12,6 +16,10 @@ const emit = defineEmits<{
   change: [status: RsvpStatus | null]
   updated: [event: Event]
 }>()
+
+const router = useRouter()
+const auth = useAuthStore()
+const ui = useUiStore()
 
 const busy = ref(false)
 const pending = ref<RsvpStatus | null>(null)
@@ -30,8 +38,20 @@ const note = computed(() => {
   return 'Let the organizer know you are interested.'
 })
 
+function ensureAccount(): boolean {
+  if (auth.isAuthenticated) return true
+  ui.pushToast({
+    title: 'Sign in to RSVP',
+    message: 'RSVPs need an account. Creating one takes a minute.',
+    tone: 'info',
+  })
+  void router.push({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+  return false
+}
+
 async function respond(status: RsvpStatus): Promise<void> {
   if (busy.value || props.disabled || current.value === status) return
+  if (!ensureAccount()) return
   busy.value = true
   pending.value = status
   error.value = ''
@@ -49,6 +69,7 @@ async function respond(status: RsvpStatus): Promise<void> {
 
 async function cancel(): Promise<void> {
   if (busy.value || props.disabled || !current.value) return
+  if (!ensureAccount()) return
   busy.value = true
   pending.value = null
   error.value = ''
@@ -73,23 +94,31 @@ async function cancel(): Promise<void> {
 
     <div class="rsvp__actions">
       <BaseButton
-        variant="primary"
+        variant="secondary"
+        class="rsvp__going"
+        :class="{ 'rsvp__going--current': current === 'going' }"
         data-status="going"
         :aria-pressed="current === 'going'"
         :disabled="disabled"
         :loading="busy && pending === 'going'"
         @click="respond('going')"
       >
+        <svg class="rsvp__check" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="m8 12 4 4 8-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
         {{ current === 'going' ? 'You are going' : 'Going' }}
       </BaseButton>
       <BaseButton
         variant="secondary"
+        class="rsvp__maybe"
+        :class="{ 'rsvp__maybe--current': current === 'maybe' }"
         data-status="maybe"
         :aria-pressed="current === 'maybe'"
         :disabled="disabled"
         :loading="busy && pending === 'maybe'"
         @click="respond('maybe')"
       >
+        <AppIcon name="eye" size="16" />
         {{ current === 'maybe' ? 'You might go' : 'Maybe' }}
       </BaseButton>
       <BaseButton v-if="current" variant="ghost" data-status="cancel" :disabled="disabled || busy" @click="cancel">
@@ -128,6 +157,7 @@ async function cancel(): Promise<void> {
 .rsvp__capacity {
   color: var(--text-secondary);
   font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
 }
 
 .rsvp__actions {
@@ -144,5 +174,28 @@ async function cancel(): Promise<void> {
 .rsvp__error {
   color: var(--alert);
   font-size: var(--text-sm);
+}
+
+.rsvp__going {
+  background: var(--ember);
+  color: var(--ink-900);
+}
+
+.rsvp__going--current {
+  background: var(--ok);
+  color: var(--ink-900);
+}
+
+.rsvp__maybe--current {
+  border-color: var(--border-strong);
+  background: var(--ink-700);
+  color: var(--text-primary);
+}
+
+.rsvp__check {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
 }
 </style>

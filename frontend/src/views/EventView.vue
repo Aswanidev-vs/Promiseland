@@ -276,8 +276,10 @@ watch(id, load)
             <dl class="plaque__details">
               <div>
                 <dt>When</dt>
-                <dd class="mono">{{ parts.full }} · {{ parts.time }}</dd>
-                <dd class="plaque__zone mono">{{ event.timezone }}</dd>
+                <dd class="plaque__when">
+                  <span class="mono">{{ parts.time }}</span>
+                  <span class="plaque__zone mono">{{ event.timezone }}</span>
+                </dd>
               </div>
               <div>
                 <dt>Where</dt>
@@ -293,7 +295,7 @@ watch(id, load)
               </div>
               <div>
                 <dt>Responses</dt>
-                <dd class="mono">{{ capacityNote }}</dd>
+                <dd class="mono plaque__capacity">{{ capacityNote }}</dd>
               </div>
             </dl>
           </div>
@@ -486,20 +488,23 @@ watch(id, load)
   border-right: 1px dashed var(--border-strong);
 }
 
-.plaque__month,
 .plaque__weekday {
   color: var(--text-secondary);
   font-size: var(--text-xs);
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .plaque__day {
   color: var(--text-primary);
   font-family: var(--font-display);
   font-size: var(--text-4xl);
+  font-weight: 560;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+.plaque__month {
+  color: var(--text-secondary);
 }
 
 .plaque__time {
@@ -524,7 +529,7 @@ watch(id, load)
 }
 
 .plaque__title {
-  font-size: var(--text-3xl);
+  font-size: var(--text-4xl);
 }
 
 .plaque__description {
@@ -556,6 +561,17 @@ watch(id, load)
 .plaque__zone {
   color: var(--text-secondary);
   font-size: var(--text-xs);
+}
+
+.plaque__when {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--text-primary);
+}
+
+.plaque__capacity {
+  font-variant-numeric: tabular-nums;
 }
 
 .plaque__organizer {
@@ -677,6 +693,8 @@ watch(id, load)
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-hairline);
 }
 
 .organizer__update,
@@ -715,13 +733,26 @@ watch(id, load)
   width: 100%;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-primary);
   font-family: var(--font-body);
   line-height: var(--leading-body);
   resize: vertical;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.organizer__control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.organizer__control:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+  outline: none;
 }
 
 .organizer__update-actions,
@@ -736,7 +767,7 @@ watch(id, load)
   font-size: var(--text-sm);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .plaque__main {
     flex-direction: column;
     gap: var(--space-4);
@@ -752,10 +783,6 @@ watch(id, load)
     padding: 0 0 var(--space-3);
     border-right: 0;
     border-bottom: 1px dashed var(--border-strong);
-  }
-
-  .plaque__day {
-    font-size: var(--text-2xl);
   }
 
   .plaque__time {

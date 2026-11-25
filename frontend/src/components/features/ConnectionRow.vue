@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import AppIcon from '@/components/ui/AppIcon.vue'
+import type { IconName } from '@/components/ui/icons'
 import Avatar from '@/components/ui/Avatar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import type { Connection } from '@/types'
@@ -44,6 +46,14 @@ const statusNote = computed(() => {
   return ''
 })
 
+const statusIcon = computed((): IconName => {
+  const status = props.connection.status
+  if (status === 'accepted') return 'eye'
+  if (status === 'rejected' || status === 'ignored') return 'close'
+  if (isIncoming.value || isOutgoing.value) return 'bell'
+  return 'eye'
+})
+
 const statusTone = computed(() =>
   props.connection.status === 'accepted' ? 'ok' : 'muted',
 )
@@ -83,23 +93,28 @@ const absoluteTime = computed(() => {
     </blockquote>
 
     <div class="connection-row__footer">
-      <span v-if="statusNote" class="connection-row__status" :class="`connection-row__status--${statusTone}`">
-        {{ statusNote }}
+      <span
+        v-if="statusNote"
+        class="connection-row__status"
+        :class="`connection-row__status--${statusTone}`"
+      >
+        <AppIcon :name="statusIcon" :size="16" />
+        <span class="connection-row__status-text">{{ statusNote }}</span>
       </span>
       <div v-if="isIncoming || isOutgoing || connection.status === 'accepted'" class="connection-row__actions">
         <template v-if="isIncoming">
           <BaseButton variant="primary" size="sm" :disabled="busy" @click="emit('accept')">
             Accept
           </BaseButton>
-          <BaseButton variant="secondary" size="sm" :disabled="busy" @click="emit('ignore')">
-            Ignore
-          </BaseButton>
           <BaseButton variant="ghost" size="sm" :disabled="busy" @click="emit('reject')">
             Reject
           </BaseButton>
+          <BaseButton variant="ghost" size="sm" :disabled="busy" @click="emit('ignore')">
+            Ignore
+          </BaseButton>
         </template>
         <template v-else-if="isOutgoing">
-          <BaseButton variant="ghost" size="sm" :disabled="busy" @click="emit('cancel')">
+          <BaseButton variant="secondary" size="sm" :disabled="busy" @click="emit('cancel')">
             Cancel request
           </BaseButton>
         </template>
@@ -120,10 +135,12 @@ const absoluteTime = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--ink-800);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.connection-row:first-child {
+  border-top: 0;
 }
 
 .connection-row__head {
@@ -176,6 +193,10 @@ const absoluteTime = computed(() => {
 }
 
 .connection-row__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
   font-size: var(--text-xs);
   font-weight: 500;
 }

@@ -77,7 +77,7 @@ async function finish(): Promise<void> {
         <BaseButton v-if="step === 1" variant="primary" @click="step = 2">Continue</BaseButton>
         <BaseButton v-else variant="primary" :loading="saving" @click="finish">Finish setup</BaseButton>
       </div>
-      <p class="onboarding__skip">You can skip this and set things up in settings later.</p>
+      <p class="onboarding__skip">Skip for now and set things up in settings later.</p>
     </template>
   </div>
 </template>
@@ -91,12 +91,15 @@ async function finish(): Promise<void> {
 }
 
 .onboarding__progress {
-  color: var(--tide);
+  color: var(--text-muted);
   font-size: var(--text-sm);
 }
 
 .onboarding__title {
   font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-weight: 560;
+  letter-spacing: -0.015em;
 }
 
 .onboarding__intro {

@@ -14,25 +14,25 @@ export const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
-    meta: { title: 'Sign in', guestOnly: true },
+    meta: { title: 'Sign in', guestOnly: true, bare: true },
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('@/views/RegisterView.vue'),
-    meta: { title: 'Create account', guestOnly: true },
+    meta: { title: 'Create account', guestOnly: true, bare: true },
   },
   {
     path: '/verify-email',
     name: 'verify-email',
     component: () => import('@/views/VerifyEmailView.vue'),
-    meta: { title: 'Verify your email' },
+    meta: { title: 'Verify your email', bare: true },
   },
   {
     path: '/reset-password',
     name: 'reset-password',
     component: () => import('@/views/ResetPasswordView.vue'),
-    meta: { title: 'Reset password' },
+    meta: { title: 'Reset password', bare: true },
   },
 
   // Authenticated application.
@@ -195,11 +195,33 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Adult area', requiresAuth: true },
   },
 
+  // Legal pages and error states are public and use the bare layout.
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('@/views/TermsView.vue'),
+    meta: { title: 'Terms of use', bare: true },
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('@/views/PrivacyView.vue'),
+    meta: { title: 'Privacy policy', bare: true },
+  },
+  {
+    path: '/error/:code',
+    name: 'error',
+    component: () => import('@/views/ErrorView.vue'),
+    props: (route) => ({ code: String(route.params.code) }),
+    meta: { title: 'Something went wrong', bare: true },
+  },
+
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
-    component: () => import('@/views/NotFoundView.vue'),
-    meta: { title: 'Page not found' },
+    component: () => import('@/views/ErrorView.vue'),
+    props: { code: 404 },
+    meta: { title: 'Page not found', bare: true },
   },
 ]
 

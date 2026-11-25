@@ -198,7 +198,7 @@ function submit(): void {
 
 .adult-form__control:focus {
   border-color: var(--ember);
-  outline: none;
+  outline: 2px solid var(--ember); outline-offset: 2px;
 }
 
 .adult-form__field--invalid .adult-form__control {

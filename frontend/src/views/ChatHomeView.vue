@@ -269,9 +269,9 @@ onMounted(() => {
     cursor: pointer;
   }
 
-  .chat-home__tab--active {
-    border-bottom-color: var(--ember) !important;
-    color: var(--text-primary) !important;
+  .chat-home__tabs button.chat-home__tab--active {
+    border-bottom-color: var(--ember);
+    color: var(--text-primary);
   }
 
   .chat-home__grid {

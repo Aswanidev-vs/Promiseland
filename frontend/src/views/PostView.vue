@@ -329,7 +329,7 @@ watch(id, load)
 
 .post-detail__author {
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
 }
 
@@ -337,7 +337,7 @@ watch(id, load)
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: var(--text-sm);
 }
 
@@ -346,7 +346,12 @@ watch(id, load)
 }
 
 .post-detail__title {
-  font-size: var(--text-2xl);
+  margin-top: var(--space-3);
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .post-detail__body {
@@ -419,23 +424,39 @@ watch(id, load)
 
 .post-detail__score {
   min-width: 2.5ch;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
   text-align: center;
 }
 
 .post-detail__action {
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-sm);
   background: none;
   color: var(--text-secondary);
   font-size: var(--text-sm);
+  text-decoration: none;
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
 }
 
 .post-detail__action:hover:not(:disabled) {
   background: var(--ink-700);
   color: var(--text-primary);
+}
+
+.post-detail__action:active:not(:disabled) {
+  background: var(--ink-700);
+  color: var(--text-primary);
+}
+
+.post-detail__action:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
 }
 
 .post-detail__action--on {

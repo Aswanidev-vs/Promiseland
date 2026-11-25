@@ -1,14 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0A0E13" />
+    <meta name="theme-color" content="#090a0d" id="meta-theme-color" />
     <meta
       name="description"
       content="PromisedLand is a home for anime fans. Find your communities, share what you make, and meet the people who get it."
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PromisedLand — Your fandom. Your people. Your place." />
+    <meta
+      property="og:description"
+      content="An anime-first social network: spoiler-aware communities, a creator feed for cosplay and fan art, and events you can show up to."
+    />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <title>PromisedLand — Your fandom. Your people. Your place.</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('pl-theme');
+          var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+          var meta = document.getElementById('meta-theme-color');
+          if (meta) meta.setAttribute('content', theme === 'light' ? '#f9f7f3' : '#090a0d');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -2,25 +2,39 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '@/components/layout/AppShell.vue'
+import ErrorView from '@/views/ErrorView.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useFailureStore } from '@/stores/failure'
 
 const route = useRoute()
 const auth = useAuthStore()
-// The landing page uses the whole canvas; app views stay in the 720px column.
-const isLanding = computed(() => route.name === 'landing')
+const failure = useFailureStore()
 
-// One session lookup for the whole app; the router guard reuses its result.
+// Public pages (landing, auth, legal, errors) carry their own masthead.
+const isBare = computed(() => route.name === 'landing' || route.meta.bare === true)
+
+// A render crash outranks an unreachable API; both replace the routed view.
+// The 503 takeover is limited to app screens: the landing and legal pages do
+// not need the API to render, so they stay up and show inline errors instead.
+const failureCode = computed(() => {
+  if (failure.renderFailed) return 500
+  if (!isBare.value && failure.serviceUnavailable) return 503
+  return 0
+})
+
+// One session lookup per load: the route guard may already have made it.
 onMounted(() => {
-  void auth.fetchMe()
+  void auth.ensureLoaded()
 })
 </script>
 
 <template>
-  <AppShell :wide="isLanding">
+  <AppShell :wide="isBare" :bare="isBare">
     <RouterView v-slot="{ Component, route: currentRoute }">
       <Transition name="page" mode="out-in" appear>
         <div :key="currentRoute.path" class="page">
-          <component :is="Component" />
+          <component :is="ErrorView" v-if="failureCode" :code="failureCode" />
+          <component :is="Component" v-else />
         </div>
       </Transition>
     </RouterView>

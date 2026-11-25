@@ -25,10 +25,10 @@ withDefaults(
   align-items: center;
   gap: var(--space-1);
   min-height: 24px;
-  padding: 2px var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-pill);
-  background: var(--ink-850);
+  background: var(--ink-700);
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: var(--text-xs);

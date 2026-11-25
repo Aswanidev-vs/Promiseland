@@ -211,7 +211,8 @@ onMounted(load)
 }
 
 .settings__title {
-  font-size: var(--text-2xl);
+  font-weight: 560;
+  letter-spacing: -0.02em;
 }
 
 .settings__section {
@@ -245,13 +246,24 @@ onMounted(load)
 .settings__control {
   width: 100%;
   min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-strong);
+  padding: var(--space-3) calc(var(--space-3) + 2px);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: var(--ink-850);
   color: var(--text-primary);
   font-family: var(--font-body);
   resize: vertical;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.settings__control:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.settings__control:focus {
+  border-color: var(--ember);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ember-soft);
 }
 
 .settings__check {
@@ -267,6 +279,12 @@ onMounted(load)
   width: 18px;
   height: 18px;
   accent-color: var(--ember);
+}
+
+.settings__check input:disabled,
+.settings__list-item input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .settings__actions {

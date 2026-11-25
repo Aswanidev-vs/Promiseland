@@ -127,17 +127,26 @@ onMounted(run)
       @action="((query = ''), submit())"
     />
 
-    <ul v-else-if="type === 'users'" class="search__list">
-      <li v-for="user in users" :key="user.id"><UserCard :user="user" /></li>
-    </ul>
+    <section v-else-if="type === 'users'" class="search__group">
+      <h2 class="search__group-title">People <span class="search__count mono">{{ users.length }}</span></h2>
+      <ul class="search__list">
+        <li v-for="user in users" :key="user.id"><UserCard :user="user" /></li>
+      </ul>
+    </section>
 
-    <ul v-else-if="type === 'communities'" class="search__list">
-      <li v-for="community in communities" :key="community.id"><CommunityCard :community="community" /></li>
-    </ul>
+    <section v-else-if="type === 'communities'" class="search__group">
+      <h2 class="search__group-title">Communities <span class="search__count mono">{{ communities.length }}</span></h2>
+      <ul class="search__list">
+        <li v-for="community in communities" :key="community.id"><CommunityCard :community="community" /></li>
+      </ul>
+    </section>
 
-    <ul v-else class="search__list">
-      <li v-for="post in posts" :key="post.id"><PostCard :post="post" /></li>
-    </ul>
+    <section v-else class="search__group">
+      <h2 class="search__group-title">Posts <span class="search__count mono">{{ posts.length }}</span></h2>
+      <ul class="search__list">
+        <li v-for="post in posts" :key="post.id"><PostCard :post="post" /></li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -149,7 +158,26 @@ onMounted(run)
 }
 
 .search__title {
-  font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.search .field__input:focus {
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+}
+
+.search__group-title {
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.search__count {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .search__list {

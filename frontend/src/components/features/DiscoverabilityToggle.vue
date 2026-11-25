@@ -39,6 +39,7 @@ function toggle(): void {
       <span class="discoverability__track" aria-hidden="true">
         <span class="discoverability__knob" />
       </span>
+      <span class="discoverability__state">{{ modelValue ? 'On' : 'Off' }}</span>
     </button>
   </div>
 </template>
@@ -80,7 +81,7 @@ function toggle(): void {
   display: inline-flex;
   flex: none;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-3);
   min-width: 44px;
   min-height: 44px;
   border: 0;
@@ -97,9 +98,8 @@ function toggle(): void {
 .discoverability__track {
   display: flex;
   align-items: center;
-  width: 40px;
-  height: 22px;
-  padding: 2px;
+  width: var(--space-10);
+  height: var(--space-5);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-pill);
   background: var(--ink-600);
@@ -107,20 +107,26 @@ function toggle(): void {
 }
 
 .discoverability__switch--on .discoverability__track {
-  border-color: var(--tide);
-  background: var(--tide);
+  border-color: var(--ember);
+  background: var(--ember-soft);
 }
 
 .discoverability__knob {
-  width: 16px;
-  height: 16px;
+  width: var(--space-4);
+  height: var(--space-4);
   border-radius: var(--radius-pill);
   background: var(--text-secondary);
   transition: transform var(--dur-fast) var(--ease);
 }
 
 .discoverability__switch--on .discoverability__knob {
-  background: var(--ink-900);
-  transform: translateX(18px);
+  background: var(--ember);
+  transform: translateX(var(--space-5));
+}
+
+.discoverability__state {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
 }
 </style>

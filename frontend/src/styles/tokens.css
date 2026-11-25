@@ -1,47 +1,26 @@
 /**
- * PromisedLand design tokens — single source of truth.
- * Mirrors docs/design-system.md. Never hardcode a colour in a component.
- *
- * Contrast notes (measured on --ink-900):
- *   text-primary 16.3:1 · text-secondary 10.8:1 · text-muted 4.8:1
- *   ember 9.6:1 · tide 9.7:1
- *   --text-muted falls to ~4.2:1 on --ink-800, so use text-secondary for
- *   small meta text inside cards.
+ * PromisedLand design tokens — Dual-Theme (Obsidian Night & Warm Washi).
+ * Inspired by Linear/Vercel precision + logo.png (ivory brush & vermilion coral).
+ * Preserves legacy --ink-* / --ember / --tide aliases so all views inherit the overhaul.
  */
 
 :root {
-  /* Surfaces — one ink-blue neutral ramp */
-  --ink-900: #0a0e13;
-  --ink-850: #0f151d;
-  --ink-800: #141c26;
-  --ink-700: #1c2734;
-  --ink-600: #283546;
-
-  /* Text */
-  --text-primary: #ecf1f5;
-  --text-secondary: #a8b7c5;
-  --text-muted: #6f8090;
-
-  /* Accents — ember = primary action only, tide = discovery/links */
-  --ember: #f2a65a;
-  --ember-strong: #f7bc7c;
-  --tide: #5bc8c0;
-  --alert: #e2735e;
-  --ok: #5fb98c;
-
-  /* Type */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Type — Plus Jakarta Sans + JetBrains Mono, self-hosted via @fontsource.
+     Family names carry the " Variable" suffix of the installed packages; system
+     fonts cover CJK glyphs (Noto Sans JP is not bundled). */
+  --font-display: 'Plus Jakarta Sans Variable', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans Variable', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Consolas, monospace;
 
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
   --text-lg: 1.0625rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.875rem;
-  --text-3xl: 2.5rem;
-  --text-4xl: 3.25rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+  --text-hero: clamp(2.5rem, 5vw, 3.75rem);
 
   --leading-body: 1.6;
   --leading-heading: 1.15;
@@ -60,23 +39,16 @@
   --space-16: 64px;
   --space-20: 80px;
 
-  /* Radii — outer 12, inner 8, never below 4 */
-  --radius-sm: 4px;
+  /* Radii */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-pill: 999px;
-
-  /* Borders */
-  --border-hairline: rgba(236, 241, 245, 0.1);
-  --border-strong: rgba(236, 241, 245, 0.18);
-
-  /* Shadows — quiet, single direction */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.32);
 
   /* Motion — one easing curve */
   --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --dur-fast: 160ms;
+  --dur-fast: 150ms;
   --dur: 240ms;
   --dur-reveal: 420ms;
   --stagger-step: 40ms;
@@ -91,9 +63,68 @@
   --bottomnav-h: 64px;
 }
 
-@supports (color: color-mix(in srgb, red, blue)) {
-  :root {
-    --border-hairline: color-mix(in srgb, var(--text-primary) 10%, transparent);
-    --border-strong: color-mix(in srgb, var(--text-primary) 18%, transparent);
-  }
+/* ── Nocturnal Cozy (Default Dark) ───────────────────────────────────────── */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink-900: #090a0d;
+  --ink-850: #101218;
+  --ink-800: #171a22;
+  --ink-700: #1f2430;
+  --ink-600: #2b3140;
+
+  --text-primary: #f5efe6;
+  --text-secondary: #a8a39b;
+  --text-muted: #706d67;
+
+  /* Vermilion Coral from logo.png */
+  --ember: #e05a3f;
+  --ember-strong: #ea6d54;
+  --ember-soft: rgba(224, 90, 63, 0.14);
+  --tide: #65b8b0;
+  --paper: #f5efe6;
+  --alert: #e26a5a;
+  --ok: #5fb98c;
+  --scrim: rgba(9, 10, 13, 0.82);
+
+  --border-hairline: rgba(245, 239, 230, 0.08);
+  --border-strong: rgba(245, 239, 230, 0.16);
+  --lift-top: inset 0 1px 0 rgba(245, 239, 230, 0.04);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.36);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.48);
+}
+
+/* ── Warm Washi (Light Mode) ─────────────────────────────────────────────── */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --ink-900: #f9f7f3;
+  --ink-850: #ffffff;
+  --ink-800: #f2efe9;
+  --ink-700: #e8e3da;
+  --ink-600: #dad3c7;
+
+  --text-primary: #131418;
+  --text-secondary: #52504c;
+  --text-muted: #7a7670;
+
+  /* Ember is darkened in light mode so 15px text on the accent, and the accent
+     on paper, both clear 4.5:1 (the #c9462c pair measured 4.46:1). */
+  --ember: #c0402a;
+  --ember-strong: #a8361f;
+  --ember-soft: rgba(192, 64, 42, 0.1);
+  --tide: #1f7a73;
+  --paper: #131418;
+  --alert: #c53d2d;
+  --ok: #257a52;
+  --scrim: rgba(249, 247, 243, 0.86);
+
+  --border-hairline: rgba(19, 20, 24, 0.09);
+  --border-strong: rgba(19, 20, 24, 0.18);
+  --lift-top: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-1: 0 1px 2px rgba(19, 20, 24, 0.06);
+  --shadow-2: 0 8px 24px rgba(19, 20, 24, 0.08);
+  --shadow-3: 0 16px 48px rgba(19, 20, 24, 0.12);
 }

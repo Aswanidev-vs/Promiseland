@@ -127,11 +127,15 @@ onMounted(() => void load(true))
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .home__header h1 {
-  font-size: var(--text-2xl);
+  font-family: var(--font-display);
+  font-weight: 560;
+  font-size: var(--text-3xl);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .home__feed {

@@ -43,15 +43,16 @@ const statusNote = computed(() => {
 
     <RouterLink class="event-card__body" :to="`/events/${event.id}`">
       <div class="event-card__date" :title="parts.full">
-        <span class="event-card__month mono">{{ parts.month }}</span>
         <span class="event-card__day">{{ parts.day }}</span>
-        <span class="event-card__weekday mono">{{ parts.weekday }}</span>
+        <span class="event-card__month mono">{{ parts.month }}</span>
       </div>
 
       <div class="event-card__info">
         <h2 class="event-card__title">{{ event.title }}</h2>
-        <p class="event-card__when mono">{{ parts.full }} · {{ parts.time }}</p>
-        <p class="event-card__place">{{ place }}</p>
+        <div class="event-card__meta">
+          <span class="event-card__time mono">{{ parts.time }}</span>
+          <span class="event-card__place mono">{{ place }}</span>
+        </div>
         <div class="event-card__foot">
           <Avatar
             :name="event.organizer?.display_name || event.organizer?.username || 'Member'"
@@ -95,27 +96,29 @@ const statusNote = computed(() => {
 .event-card__media {
   position: relative;
   display: flex;
-  min-height: 132px;
+  aspect-ratio: 3 / 4;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-radius: var(--radius-md);
   border-bottom: 1px solid var(--border-hairline);
   background: var(--ink-850);
 }
 
-.event-card__cover {
+.event-card__cover,
+.event-card__placeholder {
   width: 100%;
-  height: 164px;
+  height: 100%;
+}
+
+.event-card__cover {
   object-fit: cover;
 }
 
 .event-card__placeholder {
   display: flex;
-  width: 100%;
-  height: 132px;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid var(--border-hairline);
   background: var(--ink-900);
   opacity: 0.85;
 }
@@ -134,34 +137,28 @@ const statusNote = computed(() => {
   text-decoration: none;
 }
 
+/* The date plaque evolves into an ember stamp: day number in Fraunces + month. */
 .event-card__date {
   display: flex;
-  width: 64px;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
   gap: var(--space-1);
-  padding-right: var(--space-4);
-  border-right: 1px dashed var(--border-strong);
-}
-
-.event-card__month {
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  flex: none;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--ember);
+  color: var(--ink-900);
 }
 
 .event-card__day {
-  color: var(--text-primary);
+  color: var(--ink-900);
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
+  font-size: var(--text-4xl);
+  font-weight: 560;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
-.event-card__weekday {
-  color: var(--text-secondary);
+.event-card__month {
+  color: var(--ink-900);
   font-size: var(--text-xs);
 }
 
@@ -182,14 +179,23 @@ const statusNote = computed(() => {
   color: var(--tide);
 }
 
-.event-card__when {
+.event-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
   color: var(--text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+}
+
+.event-card__time,
+.event-card__place {
+  font-family: var(--font-mono);
 }
 
 .event-card__place {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .event-card__foot {
@@ -251,11 +257,6 @@ const statusNote = computed(() => {
 
   .event-card__capacity {
     padding-inline: var(--space-4);
-  }
-
-  .event-card__date {
-    width: 52px;
-    padding-right: var(--space-3);
   }
 }
 </style>

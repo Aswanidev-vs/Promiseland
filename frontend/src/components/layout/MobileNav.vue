@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useGuestStore } from '@/stores/guest'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import type { IconName } from '@/components/ui/icons'
 
@@ -14,12 +15,22 @@ interface Tab {
 }
 
 const auth = useAuthStore()
+const guest = useGuestStore()
 
 const profileTo = computed(() =>
   auth.user?.username ? `/u/${encodeURIComponent(auth.user.username)}` : '/login',
 )
 
-const tabs = computed<Tab[]>(() => [
+const tabs = computed<Tab[]>(() => {
+  if (guest.isGuest) {
+    return [
+      { label: 'Events', icon: 'events', to: '/events' },
+      { label: 'Creators', icon: 'creative', to: '/creators' },
+      { label: 'Sign in', icon: 'profile', to: '/login' },
+    ]
+  }
+
+  return [
   { label: 'Home', icon: 'home', to: '/home' },
   { label: 'Communities', icon: 'communities', to: '/communities' },
   { label: 'Chat', icon: 'chat', to: '/chat', compact: true },
@@ -27,7 +38,8 @@ const tabs = computed<Tab[]>(() => [
   { label: 'Events', icon: 'events', to: '/events' },
   { label: 'Notifications', icon: 'bell', to: '/notifications' },
   { label: 'Profile', icon: 'profile', to: profileTo.value },
-])
+  ]
+})
 </script>
 
 <template>
@@ -64,8 +76,9 @@ const tabs = computed<Tab[]>(() => [
 
 .mobile-nav__list {
   display: grid;
-  /* Seven equal cells: 375px / 7 ≈ 53px, still above the 44px touch floor. */
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* Equal cells for however many tabs the session has (7 at most, 3 for guests). */
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   height: 100%;
 }
 
@@ -82,7 +95,7 @@ const tabs = computed<Tab[]>(() => [
   width: 100%;
   height: 100%;
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: var(--text-xs);
   line-height: 1.1;
   text-align: center;
   text-decoration: none;
