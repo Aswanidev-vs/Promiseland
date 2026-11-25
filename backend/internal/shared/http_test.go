@@ -190,3 +190,41 @@ func TestCursorRoundTrip(t *testing.T) {
 		t.Error("expected error for malformed cursor")
 	}
 }
+
+func TestCORSWildcardNeverGrantsCredentials(t *testing.T) {
+	handler := CORS("*")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+	req.Header.Set("Origin", "https://evil.example")
+	handler.ServeHTTP(rec, req)
+
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("allow origin = %q, want *", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "" {
+		t.Fatalf("allow credentials = %q, want empty for a wildcard origin", got)
+	}
+}
+
+func TestCORSOnlyEchoesTheConfiguredOrigin(t *testing.T) {
+	handler := CORS("http://localhost:5173")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	for _, origin := range []string{"https://evil.example", "http://localhost:5174"} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/me", nil)
+		req.Header.Set("Origin", origin)
+		handler.ServeHTTP(rec, req)
+
+		if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+			t.Fatalf("%s: allow origin = %q, want none", origin, got)
+		}
+		if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "" {
+			t.Fatalf("%s: allow credentials = %q, want none", origin, got)
+		}
+	}
+}

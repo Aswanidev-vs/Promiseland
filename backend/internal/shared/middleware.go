@@ -74,11 +74,18 @@ func CORS(origin string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Vary", "Origin")
 			requestOrigin := r.Header.Get("Origin")
-			if requestOrigin != "" && (allowed == "*" || requestOrigin == allowed) {
-				// Echo the origin even for "*": browsers reject a literal "*"
-				// when credentials (the session cookie) are included.
+			// A wildcard never carries credentials: echoing the caller's origin
+			// with Allow-Credentials would let any site read a signed-in user's
+			// responses. Credentials require one exact configured origin.
+			switch {
+			case requestOrigin == "":
+			case allowed == "*":
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			case requestOrigin == allowed:
 				w.Header().Set("Access-Control-Allow-Origin", requestOrigin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
+			if w.Header().Get("Access-Control-Allow-Origin") != "" {
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Request-Id, Authorization")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Max-Age", "600")
