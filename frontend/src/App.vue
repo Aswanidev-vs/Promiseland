@@ -19,7 +19,7 @@ const isBare = computed(() => route.name === 'landing' || route.meta.bare === tr
 // The 503 takeover is limited to app screens: the landing and legal pages do
 // not need the API to render, so they stay up and show inline errors instead.
 // The rail only exists where the shell shows it, so the requests can wait.
-const railVisible = useMediaQuery('(min-width: 1366px)')
+const railVisible = useMediaQuery('(min-width: 1280px)')
 const RAIL_SECTIONS: Record<string, Array<'events' | 'creators' | 'communities'>> = {
   home: ['events', 'creators'],
   communities: ['communities', 'events'],

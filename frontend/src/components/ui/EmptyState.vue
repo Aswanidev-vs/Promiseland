@@ -29,7 +29,7 @@ const titleId = nextId('empty-title')
 
 <template>
   <section class="empty" :aria-labelledby="titleId">
-    <img class="brand-mark" src="/logo.png" alt="" width="72" height="72" />
+    <img class="brand-mark" src="/logo.png" alt="" width="56" height="56" style="--mark-size: 56px" />
     <div class="empty__copy">
       <h2 :id="titleId" class="empty__title">{{ title }}</h2>
       <p v-if="description" class="empty__description">{{ description }}</p>
@@ -42,27 +42,27 @@ const titleId = nextId('empty-title')
 </template>
 
 <style scoped>
+/* A nudge inside the column, not a card that stretches to fill it: the frame
+   (rails, header, tabs) is what makes an empty page look finished. */
 .empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-12) var(--space-6);
-  border: 1px dashed var(--border-hairline);
-  border-radius: var(--radius-lg);
-  background: var(--ink-850);
-  text-align: center;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 52ch;
+  padding-block: var(--space-6);
 }
 
 .empty__copy {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-width: 42ch;
 }
 
 .empty__title {
   font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .empty__description {

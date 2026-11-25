@@ -191,8 +191,9 @@ close button is a ghost icon button with `title`.
 **Skeleton** — `--skeleton-bar` on `--ink-700`, breathing opacity (existing primitive). Same
 shape as the content it replaces; no centered spinner for full pages.
 
-**Empty state** — brand mark (72px) + one sentence telling what will appear here +
-one primary action. No emoji, no "Nothing here yet 👋".
+**Empty state** — a compact block, not a card: brand mark (56px), a title at `--text-xl`, one sentence, one
+action, capped at 52ch and left-aligned in the column. It never stretches to fill the space it sits in; the
+frame around it (header, tabs, rails) is what makes the page look finished. No emoji, no "Nothing here yet 👋".
 
 **Spoiler shield** (`SpoilerShield.vue`) — content obscured with `backdrop-filter: blur(10px)` +
 `--ink-900` 70% wash; label "Spoilers — tap to reveal" in mono `--text-sm`; reveal is an explicit
@@ -247,7 +248,13 @@ button; after reveal, a quiet "Hide again" text action stays.
   every sample surface says so in its caption.
 - **Home feed:** tabs (Following / For You) with ember underline; composer well sunken at top;
   posts as cards, media with nested radius; action row muted until active (ember like, tide
-  nothing). Skeleton rows match card shape.
+  nothing). Skeleton rows match card shape. An empty feed is not a bigger placeholder: the compact
+  empty block, then "Communities to start with" — three real communities the reader has not joined,
+  each joinable in place. From 1280px the shell (1440 canvas) adds a 320
+  rail beside a feed that grows to 720 once the canvas allows it, with hairline-separated sections fed by real public endpoints: Home shows upcoming events plus
+  creators, Communities shows communities plus events, Events shows creators plus communities,
+  Discover shows events plus creators, Notifications has none. The rail only mounts where it is
+  visible, so phones and tablets make no extra requests.
 - **Communities (list):** search + topic chips row; list rows (not a card grid) with icon, name,
   mono member count, one-line description, join action right-aligned. Filter chips use the chip
   recipe; "Joined" state uses `--ok`.
