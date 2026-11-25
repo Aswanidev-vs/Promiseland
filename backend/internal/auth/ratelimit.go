@@ -77,12 +77,28 @@ func (l *rateLimiter) middleware(route string, limit int) func(http.Handler) htt
 	}
 }
 
-// clientIP uses the connection address only. Forwarded headers are easy to
-// spoof and are deliberately ignored for rate-limit keys.
+// clientIP returns the caller's address for rate-limit keys. Forwarded headers
+// are honoured only when the immediate peer is loopback or private (our edge
+// proxy), and only the last hop it appended: a public caller cannot spoof the
+// key, and a proxied deployment still buckets per client instead of putting
+// every user in one shared login window.
 func clientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return strings.TrimSpace(r.RemoteAddr)
+		host = strings.TrimSpace(r.RemoteAddr)
+	}
+	peer := net.ParseIP(host)
+	if peer == nil || !(peer.IsLoopback() || peer.IsPrivate()) {
+		return host
+	}
+	for _, forwarded := range []string{r.Header.Get("X-Forwarded-For"), r.Header.Get("X-Real-IP")} {
+		if forwarded == "" {
+			continue
+		}
+		parts := strings.Split(forwarded, ",")
+		if candidate := net.ParseIP(strings.TrimSpace(parts[len(parts)-1])); candidate != nil {
+			return candidate.String()
+		}
 	}
 	return host
 }
