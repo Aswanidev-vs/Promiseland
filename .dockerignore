@@ -11,6 +11,10 @@
 **/.vite
 **/coverage
 
+# Brand source art is not a build input: the app serves its own copies from
+# frontend/public and the docs site from docs/. Keep it out of build contexts.
+assets/
+
 # Runtime data and logs.
 *.db
 *.db-shm
