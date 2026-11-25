@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"net/http"
-	"net/url"
 	"strings"
 	"unicode/utf8"
 
@@ -133,22 +132,13 @@ func validateProfilePatch(in profilePatch, details validationErrors) {
 	if in.Location != nil && utf8.RuneCountInString(*in.Location) > 100 {
 		details.add("location", "Location must be at most 100 characters.")
 	}
-	if in.AvatarURL != nil && !validOptionalURL(*in.AvatarURL) {
-		details.add("avatar_url", "Enter a valid http(s) URL.")
+	if in.AvatarURL != nil && !shared.ValidProfileImage(*in.AvatarURL) {
+		details.add("avatar_url", "Upload an image or enter an http(s) URL.")
 	}
-	if in.BannerURL != nil && !validOptionalURL(*in.BannerURL) {
-		details.add("banner_url", "Enter a valid http(s) URL.")
+	if in.BannerURL != nil && !shared.ValidProfileImage(*in.BannerURL) {
+		details.add("banner_url", "Upload an image or enter an http(s) URL.")
 	}
 	if in.Visibility != nil && *in.Visibility != "public" && *in.Visibility != "private" {
 		details.add("visibility", "Visibility must be 'public' or 'private'.")
 	}
-}
-
-func validOptionalURL(value string) bool {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return true
-	}
-	u, err := url.Parse(value)
-	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 }

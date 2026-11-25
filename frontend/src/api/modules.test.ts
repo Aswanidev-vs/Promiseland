@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { verifyEmail } from './auth'
-import { getFeed, uploadMedia, votePost } from './posts'
+import { uploadMedia } from './media'
+import { getFeed, votePost } from './posts'
 import { search } from './search'
 import { updateAnimeInterests } from './users'
 

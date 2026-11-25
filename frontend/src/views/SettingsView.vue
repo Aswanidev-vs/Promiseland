@@ -3,10 +3,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
+import Avatar from '@/components/ui/Avatar.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonList from '@/components/ui/SkeletonList.vue'
 import { getMe } from '@/api/auth'
+import { uploadMedia } from '@/api/media'
 import { updateMe, updateSettings } from '@/api/users'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -25,6 +27,8 @@ const form = reactive({
   discoverable: true,
 })
 const loading = ref(true)
+const uploadingAvatar = ref(false)
+const uploadError = ref('')
 const savingProfile = ref(false)
 const savingPrivacy = ref(false)
 const error = ref('')
@@ -54,6 +58,38 @@ async function load(): Promise<void> {
     else error.value = errorMessage(cause, 'We could not load your settings. Try again.')
   } finally {
     loading.value = false
+  }
+}
+
+const avatarTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const maxAvatarBytes = 5 * 1024 * 1024
+
+async function uploadAvatar(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  // Reset the input so choosing the same file again still fires a change.
+  input.value = ''
+  if (!file) return
+
+  uploadError.value = ''
+  if (!avatarTypes.includes(file.type)) {
+    uploadError.value = 'Choose a JPEG, PNG, GIF or WebP image.'
+    return
+  }
+  if (file.size > maxAvatarBytes) {
+    uploadError.value = 'Images must be 5 MB or smaller.'
+    return
+  }
+
+  uploadingAvatar.value = true
+  try {
+    const media = await uploadMedia(file)
+    form.avatarUrl = media.url
+    notice.value = 'Photo uploaded. Save the profile to keep it.'
+  } catch (cause) {
+    uploadError.value = errorMessage(cause, 'We could not upload that image. Try again.')
+  } finally {
+    uploadingAvatar.value = false
   }
 }
 
@@ -142,7 +178,43 @@ onMounted(load)
         <h2 class="settings__heading">Profile</h2>
         <form class="settings__form" novalidate @submit.prevent="saveProfile">
           <BaseInput v-model="form.displayName" label="Display name" />
-          <BaseInput v-model="form.avatarUrl" label="Avatar URL" type="url" placeholder="https://" />
+
+          <div class="settings__avatar">
+            <Avatar
+              :name="form.displayName || 'Your profile'"
+              :src="form.avatarUrl || null"
+              size="lg"
+            />
+            <div class="settings__avatar-body">
+              <input
+                class="settings__upload"
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                aria-label="Upload a profile photo"
+                :disabled="uploadingAvatar"
+                @change="uploadAvatar"
+              />
+              <button
+                v-if="form.avatarUrl"
+                type="button"
+                class="settings__remove"
+                @click="form.avatarUrl = ''"
+              >
+                Remove photo
+              </button>
+              <p class="settings__note">
+                JPEG, PNG, GIF or WebP up to 5 MB. {{ uploadingAvatar ? 'Uploading…' : 'Save the profile after uploading.' }}
+              </p>
+              <p v-if="uploadError" class="settings__error" role="alert">{{ uploadError }}</p>
+            </div>
+          </div>
+
+          <BaseInput
+            v-model="form.avatarUrl"
+            label="Or paste an image link"
+            type="url"
+            placeholder="https://"
+          />
           <BaseInput v-model="form.location" label="Location" hint="City or region is optional." />
           <div class="settings__field">
             <label class="settings__label" for="settings-bio">Bio</label>
@@ -229,6 +301,69 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.settings__avatar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.settings__avatar-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.settings__upload {
+  max-width: 100%;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.settings__upload::file-selector-button {
+  min-height: 44px;
+  margin-right: var(--space-3);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.settings__upload::file-selector-button:hover {
+  border-color: var(--border-hairline);
+  background: var(--ink-700);
+}
+
+.settings__upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings__remove {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tide);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.settings__remove:hover {
+  color: var(--text-primary);
 }
 
 .settings__field {

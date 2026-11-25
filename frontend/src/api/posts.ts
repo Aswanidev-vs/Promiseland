@@ -1,17 +1,13 @@
-import { buildQuery, request, requestForm } from './client'
+import { buildQuery, request } from './client'
 import type {
   Comment,
   CreatePostInput,
   FeedParams,
-  Media,
   Page,
   PaginationParams,
   Post,
   Vote,
 } from '@/types'
-
-/** No upload endpoint is listed in the v1 surface; media is its own resource. */
-export const MEDIA_UPLOAD_PATH = '/media'
 
 export async function getFeed(p: FeedParams = {}): Promise<Page<Post>> {
   return request<Page<Post>>(
@@ -93,10 +89,4 @@ export async function bookmarkPost(id: number): Promise<void> {
 
 export async function unbookmarkPost(id: number): Promise<void> {
   await request<void>(`/posts/${id}/bookmark`, { method: 'DELETE' })
-}
-
-export async function uploadMedia(file: File): Promise<Media> {
-  const form = new FormData()
-  form.append('file', file)
-  return requestForm<Media>(MEDIA_UPLOAD_PATH, form)
 }

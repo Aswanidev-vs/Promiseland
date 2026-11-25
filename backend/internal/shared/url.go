@@ -2,6 +2,7 @@ package shared
 
 import (
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -28,4 +29,16 @@ func ValidOptionalURL(value string) bool {
 		return false
 	}
 	return parsed.Host != ""
+}
+
+// mediaPathPattern is the exact shape the upload endpoint produces: a 24-byte
+// random key in hex plus an allowed image extension.
+var mediaPathPattern = regexp.MustCompile(`^/media/[0-9a-f]{48}\.(jpg|jpeg|png|gif|webp)$`)
+
+// ValidProfileImage reports whether value is empty, an absolute http(s) URL, or
+// a path to one of our own uploads. Profile images are rendered as img src, so
+// the same-origin form needs no scheme and cannot leave the app.
+func ValidProfileImage(value string) bool {
+	value = strings.TrimSpace(value)
+	return value == "" || ValidOptionalURL(value) || mediaPathPattern.MatchString(value)
 }
