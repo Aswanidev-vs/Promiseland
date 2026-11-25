@@ -17,7 +17,9 @@ services:
     container_name: promisedland-api
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # Loopback only: the browser talks to the web/proxy container, and
+      # publishing the API on every interface would bypass the edge.
+      - "127.0.0.1:8080:8080"
     environment:
       PORT: ${PORT:-8080}
       DATABASE_PATH: /data/promisedland.db
