@@ -5,7 +5,7 @@ go 1.27.1
 require (
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/gorilla/websocket v1.5.3
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/image v0.48.0
 	modernc.org/sqlite v1.38.2
 )
