@@ -185,7 +185,7 @@ close button is a ghost icon button with `title`.
 **Skeleton** — `--skeleton-bar` on `--ink-700`, breathing opacity (existing primitive). Same
 shape as the content it replaces; no centered spinner for full pages.
 
-**Empty state** — WayfinderMark (small, 48–72px) + one sentence telling what will appear here +
+**Empty state** — brand mark (72px) + one sentence telling what will appear here +
 one primary action. No emoji, no "Nothing here yet 👋".
 
 **Spoiler shield** (`SpoilerShield.vue`) — content obscured with `backdrop-filter: blur(10px)` +
@@ -214,9 +214,9 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 ## 5. Signature moments (the brand fixes)
 
-1. **Wayfinder constellation** (`WayfinderMark.vue`): logo in sidebar/topbar (24–28px), hero
-   (large, with the plotted grid frame), empty states (small), 404. It represents the interest
-   graph — a star chart of what you love — so it may also appear in the profile bearing panel.
+1. **The brand mark** (`/logo.png`, from `assets/brand/logo.png`): wordmark in sidebar/topbar,
+   stamp in empty states and media placeholders. The star-chart idea now lives in the landing's
+   live interest map, not in a separate compass glyph.
 2. **Profile bearing panel:** a compact star-chart strip under the profile header plotting the
    user's favourite titles as labeled stars connected by hairlines (pure SVG/CSS from data).
    This is the "your graph is real" proof moment on the most personal screen.
@@ -278,7 +278,7 @@ button; after reveal, a quiet "Hide again" text action stays.
   and HTTP status, a "check again every 15 seconds" toggle that pauses while the tab is hidden, and a strip of
   the checks made since the page opened. No uptime percentages or historical claims the data cannot support.
 - **Chat home:** two panes from 768px up — one list panel holding Servers over Conversations with a hairline
-  between, and a detail pane whose empty state uses the brand mark, not the wayfinder; below 768 it becomes
+  between, and a detail pane whose empty state uses the brand mark; below 768 it becomes
   two tabs over a single list. Structure follows `useBreakpoint()`; widths follow media queries.
 - **Settings (profile):** avatar row with a circular preview, a native file input (44px file-selector button)
   that uploads JPEG/PNG/GIF/WebP up to 5 MB, a quiet "Remove photo" action, and the paste-a-link field kept
@@ -293,7 +293,7 @@ button; after reveal, a quiet "Hide again" text action stays.
 
 - User-generated media is the imagery — never stock, never random anime screenshots, never
   AI-generated franchise characters. Where media is absent, build the visual in SVG/CSS
-  (wayfinder, grids, stamps) — never grey placeholder boxes, never emoji as icons.
+  (the brand mark, grids, stamps) — never grey placeholder boxes, never emoji as icons.
 - One icon set, one stroke weight (existing `AppIcon`), 16/20/24 sizes only.
 - Media in cards: `object-fit: cover`, explicit aspect-ratio (4:3 feed, 3:4 event posters,
   16:9 banners) to prevent layout shift.

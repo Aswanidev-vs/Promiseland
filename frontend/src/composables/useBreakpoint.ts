@@ -6,6 +6,28 @@ const MOBILE = '(max-width: 767px)'
 const DESKTOP = '(min-width: 1024px)'
 
 /**
+ * Reactive boolean for one media query, cleaned up with the component.
+ */
+export function useMediaQuery(query: string) {
+  const matches = ref(false)
+
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const list = window.matchMedia(query)
+    matches.value = list.matches
+    const update = (): void => {
+      matches.value = list.matches
+    }
+
+    list.addEventListener('change', update)
+    if (getCurrentInstance()) {
+      onBeforeUnmount(() => list.removeEventListener('change', update))
+    }
+  }
+
+  return matches
+}
+
+/**
  * Reactive viewport band, matching the breakpoints in docs/design-system.md
  * (mobile under 768, tablet to 1023, desktop from 1024).
  *
@@ -14,26 +36,13 @@ const DESKTOP = '(min-width: 1024px)'
  * band. Everything that is purely cosmetic belongs in a media query instead.
  */
 export function useBreakpoint() {
-  const viewport = ref<Viewport>('desktop')
+  const mobile = useMediaQuery(MOBILE)
+  const desktop = useMediaQuery(DESKTOP)
 
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    const mobile = window.matchMedia(MOBILE)
-    const desktop = window.matchMedia(DESKTOP)
-    const update = (): void => {
-      viewport.value = mobile.matches ? 'mobile' : desktop.matches ? 'desktop' : 'tablet'
-    }
-
-    update()
-    mobile.addEventListener('change', update)
-    desktop.addEventListener('change', update)
-
-    if (getCurrentInstance()) {
-      onBeforeUnmount(() => {
-        mobile.removeEventListener('change', update)
-        desktop.removeEventListener('change', update)
-      })
-    }
-  }
+  const viewport = computed<Viewport>(() => {
+    if (mobile.value) return 'mobile'
+    return desktop.value ? 'desktop' : 'tablet'
+  })
 
   return {
     viewport,

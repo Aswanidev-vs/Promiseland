@@ -2,9 +2,11 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '@/components/layout/AppShell.vue'
+import HomeRail from '@/components/features/HomeRail.vue'
 import ErrorView from '@/views/ErrorView.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useFailureStore } from '@/stores/failure'
+import { useMediaQuery } from '@/composables/useBreakpoint'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -16,6 +18,10 @@ const isBare = computed(() => route.name === 'landing' || route.meta.bare === tr
 // A render crash outranks an unreachable API; both replace the routed view.
 // The 503 takeover is limited to app screens: the landing and legal pages do
 // not need the API to render, so they stay up and show inline errors instead.
+// The rail only exists where the shell shows it, so the requests can wait.
+const railVisible = useMediaQuery('(min-width: 1280px)')
+const showRail = computed(() => !isBare.value && route.name === 'home' && railVisible.value)
+
 const failureCode = computed(() => {
   if (failure.renderFailed) return 500
   if (!isBare.value && failure.serviceUnavailable) return 503
@@ -30,6 +36,10 @@ onMounted(() => {
 
 <template>
   <AppShell :wide="isBare" :bare="isBare">
+    <template v-if="showRail" #rail>
+      <HomeRail />
+    </template>
+
     <RouterView v-slot="{ Component, route: currentRoute }">
       <Transition name="page" mode="out-in" appear>
         <div :key="currentRoute.path" class="page">
