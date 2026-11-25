@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import EmptyState from './EmptyState.vue'
 
 describe('EmptyState', () => {
-  it('renders the wayfinder, copy, and a working action', async () => {
+  it('renders the brand mark, copy, and a working action', async () => {
     const wrapper = mount(EmptyState, {
       props: {
         title: 'No communities yet',
@@ -12,7 +12,7 @@ describe('EmptyState', () => {
       },
     })
 
-    expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.get('img.brand-mark').attributes('src')).toBe('/logo.png')
     expect(wrapper.text()).toContain('No communities yet')
     expect(wrapper.text()).toContain('Join one to see discussions here.')
     expect(wrapper.find('button').text()).toBe('Discover communities')

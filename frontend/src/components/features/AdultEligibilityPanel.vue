@@ -5,7 +5,6 @@
  * It never renders any dating UI and always offers a way back to /home.
  */
 import { RouterLink } from 'vue-router'
-import WayfinderMark from '@/components/ui/WayfinderMark.vue'
 
 withDefaults(
   defineProps<{
@@ -39,7 +38,7 @@ const requirements = [
 
 <template>
   <section class="adult-panel" aria-labelledby="adult-panel-title">
-    <WayfinderMark size="72px" />
+    <img class="brand-mark" src="/logo.png" alt="" width="72" height="72" />
     <div class="adult-panel__copy">
       <p class="adult-panel__eyebrow">Adults only</p>
       <h1 id="adult-panel-title" class="adult-panel__title">

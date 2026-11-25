@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import WayfinderMark from './WayfinderMark.vue'
 import BaseButton from './BaseButton.vue'
 
 withDefaults(
@@ -19,7 +18,7 @@ const titleId = `empty-title-${++sequence}`
 
 <template>
   <section class="empty" :aria-labelledby="titleId">
-    <WayfinderMark size="96px" />
+    <img class="brand-mark" src="/logo.png" alt="" width="72" height="72" />
     <div class="empty__copy">
       <h2 :id="titleId" class="empty__title">{{ title }}</h2>
       <p v-if="description" class="empty__description">{{ description }}</p>
