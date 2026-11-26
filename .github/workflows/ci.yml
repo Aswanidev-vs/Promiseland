@@ -9,7 +9,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # `dev` is the working branch; `main` only receives merges. Gating both
+    # means a broken commit is caught on the branch it was pushed to, not at
+    # pull-request time.
+    branches: [main, dev]
   pull_request:
 
 # A new push to the same ref cancels the run it supersedes.
