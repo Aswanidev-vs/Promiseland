@@ -59,6 +59,22 @@ function mountCard(post: Post) {
 describe('PostCard', () => {
   beforeEach(() => vi.clearAllMocks())
 
+  // The API used to drop `media_ids` on create, so an image post arrived with
+  // an empty media array and the card showed a title with no picture.
+  it('renders uploaded images and keeps them out of an unrevealed spoiler', () => {
+    const media = [
+      { id: 1, url: '/media/abc.png', mime_type: 'image/png', size_bytes: 73, width: 2, height: 2 },
+    ]
+
+    const plain = mountCard(makePost({ type: 'image', spoiler: false, media }))
+    const plainImg = plain.find('.post-card__media img')
+    expect(plainImg.exists()).toBe(true)
+    expect(plainImg.attributes('src')).toBe('/media/abc.png')
+
+    const shielded = mountCard(makePost({ type: 'image', spoiler: true, media }))
+    expect(shielded.find('.post-card__media').exists()).toBe(false)
+  })
+
   it('obscures spoiler body until the reader explicitly reveals it', async () => {
     const wrapper = mountCard(makePost())
     const toggle = wrapper.get('.spoiler__toggle')

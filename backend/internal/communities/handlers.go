@@ -300,10 +300,16 @@ func (h *handler) update(w http.ResponseWriter, r *http.Request) {
 		BannerURL      optionalString `json:"banner_url"`
 		Visibility     *string        `json:"visibility"`
 		PostingEnabled *bool          `json:"postingEnabled"`
-		Rules          *[]ruleInput   `json:"rules"`
+		// posting_enabled is what the frontend client sends; postingEnabled is
+		// the conventions key. Accept both rather than dropping the toggle.
+		PostingEnabledSnake *bool        `json:"posting_enabled"`
+		Rules               *[]ruleInput `json:"rules"`
 	}
 	if !shared.DecodeJSON(w, r, &patch) {
 		return
+	}
+	if patch.PostingEnabled == nil {
+		patch.PostingEnabled = patch.PostingEnabledSnake
 	}
 	details := map[string]string{}
 	if patch.Name != nil {
@@ -605,9 +611,14 @@ func (h *handler) addModerator(w http.ResponseWriter, r *http.Request) {
 	}
 	var in struct {
 		UserID int64 `json:"userId"`
+		// user_id is what the frontend client sends (src/api/communities.ts).
+		UserIDSnake int64 `json:"user_id"`
 	}
 	if !shared.DecodeJSON(w, r, &in) {
 		return
+	}
+	if in.UserID == 0 {
+		in.UserID = in.UserIDSnake
 	}
 	if in.UserID <= 0 || in.UserID == row.OwnerID {
 		writeValidation(w, map[string]string{"userId": "Choose a different existing user."})
