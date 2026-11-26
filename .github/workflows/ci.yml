@@ -117,8 +117,10 @@ jobs:
         run: docker build --tag promisedland-web:ci frontend
 
       # Context is the repository root: the edge image builds the SPA itself.
+      # The Dockerfile lives in deploy/nginx, so --file is required here — the
+      # context root has no Dockerfile and the build fails without it.
       - name: Build the edge image
-        run: docker build --tag promisedland-edge:ci .
+        run: docker build --file deploy/nginx/Dockerfile --tag promisedland-edge:ci .
 
       # Only fixable findings block: an unfixed base-image CVE is not something
       # a pull request can act on, and gating on it just teaches people to
