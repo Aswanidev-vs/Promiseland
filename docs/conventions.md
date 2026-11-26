@@ -23,6 +23,12 @@ promisedland/
 
 Go module path: `github.com/Aswanidev-vs/promiseland/backend` (in `backend/go.mod`). Import internal packages as `github.com/Aswanidev-vs/promiseland/backend/internal/<pkg>`.
 
+## Branching
+
+- **`dev` is the working branch.** All development, including feature and fix commits, lands there first.
+- **`main` receives merges only.** It is the release branch and what the EC2 instance runs; do not commit to it directly.
+- Promotion is a pull request `dev` → `main`. CI (`.github/workflows/ci.yml`) runs on every push to `dev` and `main` and on every pull request, so a broken commit is caught on the branch it was pushed to as well as at promotion time.
+
 ## Backend rules
 
 - Go 1.27. `net/http` + `github.com/go-chi/chi/v5`. SQLite via `modernc.org/sqlite` (pure Go, no cgo). Migrations via `embed` of `migrations/*.sql`.
