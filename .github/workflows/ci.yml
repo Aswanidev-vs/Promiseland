@@ -18,7 +18,11 @@ on:
 # A new push to the same ref cancels the run it supersedes.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel a superseded pull-request run: it is throwaway work on a ref nobody
+  # keeps. Do NOT cancel branch pushes — that run is the record for that
+  # commit, and cancelling it mid-flight reports "The operation was canceled"
+  # for a build that had actually succeeded, which reads like a failure.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
