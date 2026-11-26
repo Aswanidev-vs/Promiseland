@@ -293,7 +293,9 @@ only on **fixable** HIGH/CRITICAL findings.
 Backend tests exercise handlers through `httptest` against a temporary SQLite database, covering
 auth, moderation, chat, events, media and the router middleware. Frontend tests cover stores, API
 clients, view components and the new public surfaces (landing interest map, auth consent gate, error
-pages, status page, guest gating). CI runs these checks on every push to `main` and on pull requests.
+pages, status page, guest gating). CI runs these checks on every push to `dev` and `main` and on
+pull requests: development happens on `dev`, and `main` only receives merges that are promoted
+toward deployment.
 
 ## Deployment
 

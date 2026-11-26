@@ -184,10 +184,14 @@ yet.
 
 ## 9. Updates and rollback
 
-Until CI publishing exists (PRD §11.3 items 6–9), the deploy is manual:
+Until CI publishing exists (PRD §11.3 items 6–9), the deploy is manual. The
+instance tracks **`main`**, the release branch — development happens on `dev`
+and reaches `main` through a pull request, so the box only ever runs promoted
+commits:
 
 ```bash
 cd /opt/promisedland
+git switch main          # once; clone checks out the default branch
 git pull
 docker compose -f docker-compose.yml -f deploy/compose/prod.yml up -d --build
 ```
