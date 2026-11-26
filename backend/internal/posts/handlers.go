@@ -131,19 +131,44 @@ type postPatch struct {
 	Poll            *pollInput `json:"poll"`
 }
 
-// UnmarshalJSON accepts both the canonical camelCase body key and the
-// snake_case alias used by the R2 frontend client. camelCase wins when both
-// are supplied; the Post wire field remains creator_category.
+// UnmarshalJSON accepts both the canonical camelCase body keys and the
+// snake_case aliases the frontend client sends (see frontend/src/api/posts.ts).
+// camelCase wins when both are supplied.
+//
+// Every alias matters: without them the ignored key is not an error, the post
+// is still created, and the relation is silently dropped — a snake_case
+// media_ids produced an `image` post with no image, and community_slug, link_url
+// and anime_ids went the same way.
 func (p *postInput) UnmarshalJSON(b []byte) error {
 	type plain postInput
 	var raw struct {
 		plain
-		CreatorCategorySnake string `json:"creator_category"`
+		CommunitySlugSnake   string  `json:"community_slug"`
+		LinkURLSnake         string  `json:"link_url"`
+		MediaIDsSnake        []int64 `json:"media_ids"`
+		AnimeIDsSnake        []int64 `json:"anime_ids"`
+		SpoilerNoteSnake     string  `json:"spoiler_note"`
+		CreatorCategorySnake string  `json:"creator_category"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	*p = postInput(raw.plain)
+	if p.CommunitySlug == "" {
+		p.CommunitySlug = raw.CommunitySlugSnake
+	}
+	if p.LinkURL == "" {
+		p.LinkURL = raw.LinkURLSnake
+	}
+	if p.MediaIDs == nil {
+		p.MediaIDs = raw.MediaIDsSnake
+	}
+	if p.AnimeIDs == nil {
+		p.AnimeIDs = raw.AnimeIDsSnake
+	}
+	if p.SpoilerNote == "" {
+		p.SpoilerNote = raw.SpoilerNoteSnake
+	}
 	if p.CreatorCategory == "" {
 		p.CreatorCategory = raw.CreatorCategorySnake
 	}
@@ -155,12 +180,28 @@ func (p *postPatch) UnmarshalJSON(b []byte) error {
 	type plain postPatch
 	var raw struct {
 		plain
-		CreatorCategorySnake *string `json:"creator_category"`
+		LinkURLSnake         *string  `json:"link_url"`
+		MediaIDsSnake        *[]int64 `json:"media_ids"`
+		AnimeIDsSnake        *[]int64 `json:"anime_ids"`
+		SpoilerNoteSnake     *string  `json:"spoiler_note"`
+		CreatorCategorySnake *string  `json:"creator_category"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 	*p = postPatch(raw.plain)
+	if p.LinkURL == nil {
+		p.LinkURL = raw.LinkURLSnake
+	}
+	if p.MediaIDs == nil {
+		p.MediaIDs = raw.MediaIDsSnake
+	}
+	if p.AnimeIDs == nil {
+		p.AnimeIDs = raw.AnimeIDsSnake
+	}
+	if p.SpoilerNote == nil {
+		p.SpoilerNote = raw.SpoilerNoteSnake
+	}
 	if p.CreatorCategory == nil {
 		p.CreatorCategory = raw.CreatorCategorySnake
 	}

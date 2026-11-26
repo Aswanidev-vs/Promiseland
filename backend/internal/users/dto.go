@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"unicode/utf8"
@@ -68,6 +69,29 @@ type AnimeInterest struct {
 type animeInterestInput struct {
 	AnimeID      int64  `json:"animeId"`
 	InterestType string `json:"interestType"`
+}
+
+// UnmarshalJSON accepts the camelCase keys from the R1 conventions and the
+// snake_case keys the frontend client sends (src/api/users.ts). Without this
+// the interest list decoded to zero values and nothing was saved.
+func (a *animeInterestInput) UnmarshalJSON(b []byte) error {
+	type plain animeInterestInput
+	var raw struct {
+		plain
+		AnimeIDSnake      int64  `json:"anime_id"`
+		InterestTypeSnake string `json:"interest_type"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*a = animeInterestInput(raw.plain)
+	if a.AnimeID == 0 {
+		a.AnimeID = raw.AnimeIDSnake
+	}
+	if a.InterestType == "" {
+		a.InterestType = raw.InterestTypeSnake
+	}
+	return nil
 }
 
 type profilePatch struct {
