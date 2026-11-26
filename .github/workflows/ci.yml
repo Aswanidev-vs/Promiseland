@@ -167,6 +167,27 @@ jobs:
             -e MEDIA_PATH=/data/media \
             -e SESSION_SECRET=ci-smoke-only \
             promisedland-api:ci
+
+          # nginx resolves the upstream once, at start-up. Starting a proxy
+          # before the API answers makes it die with "host not found in
+          # upstream api", which hides the real failure, so wait on the API's
+          # own healthcheck first. It runs as UID 100 against a named volume,
+          # which is exactly the case a root-owned mountpoint breaks.
+          api_ready() {
+            docker exec api wget -qO- http://127.0.0.1:8080/healthz 2>/dev/null \
+              | grep -q '"status":"ok"'
+          }
+          for _ in $(seq 1 30); do
+            if api_ready; then break; fi
+            sleep 2
+          done
+          if ! api_ready; then
+            echo "::error::the API never became ready (database or migration failure)"
+            docker logs api || true
+            exit 1
+          fi
+          echo "api is ready"
+
           docker run -d --name web --network smoke -p 8080:80 \
             -e API_UPSTREAM=http://api:8080 \
             promisedland-web:ci
@@ -207,10 +228,15 @@ jobs:
           fi
           # / proves the SPA is served, /api/... proves the proxy path, and the
           # uid check proves the unprivileged base image is still unprivileged.
-          curl -fsS -o /dev/null -w 'edge / -> %{http_code} %{content_type}\n' \
-            http://localhost:8098/ | grep -q '^edge / -> 200 text/html'
+          # Results are captured rather than piped into grep: grep -q exits on
+          # the first match, which kills curl with a SIGPIPE write error and
+          # buries the real assertion in the log.
+          edge_root="$(curl -fsS -w '\n%{http_code} %{content_type}' \
+            http://localhost:8098/ | tail -n 1)"
+          [ "$edge_root" = "200 text/html" ] \
+            || { echo "::error::edge / returned: $edge_root"; exit 1; }
           curl -fsS 'http://localhost:8098/api/v1/communities?limit=2' \
-            | grep -q '"items"'
+            | grep -q '"items"' || { echo "::error::edge /api did not return JSON"; exit 1; }
           test "$(docker exec edge id -u)" = 101
           echo "edge image serves the SPA, proxies /api and /healthz, runs as UID 101"
 

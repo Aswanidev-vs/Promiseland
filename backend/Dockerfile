@@ -16,7 +16,12 @@ WORKDIR /app
 COPY --from=builder /out/server /app/server
 # Migrations are embedded in the binary; copying them is for debugging only.
 COPY migrations /app/migrations
-RUN mkdir -p /app/data && chown -R app:app /app
+# /data is what both compose files mount: a named volume in development, the
+# EBS-backed host path in production. Creating it here means a fresh named
+# volume inherits this ownership. Without it Docker creates the mountpoint
+# root-owned and the API, which runs as `app` (UID 100), cannot open its
+# database ("unable to open database file: out of memory (14)").
+RUN mkdir -p /app/data /data && chown -R app:app /app /data
 USER app
 
 ENV PORT=8080 \
